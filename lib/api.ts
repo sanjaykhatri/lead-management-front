@@ -1,6 +1,13 @@
 import axios from 'axios';
 
+// Get API URL from environment variable
+// Next.js automatically loads .env.local in development and .env.production in production
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+
+// Log the API URL in development mode for debugging
+if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+  console.log('API URL:', API_URL);
+}
 
 const api = axios.create({
   baseURL: API_URL,
