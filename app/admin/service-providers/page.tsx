@@ -28,6 +28,7 @@ export default function ServiceProvidersPage() {
     email: '',
     phone: '',
     address: '',
+    password: '',
   });
 
   useEffect(() => {
@@ -86,7 +87,7 @@ export default function ServiceProvidersPage() {
       }
       setShowModal(false);
       setEditingProvider(null);
-      setFormData({ name: '', email: '', phone: '', address: '' });
+      setFormData({ name: '', email: '', phone: '', address: '', password: '' });
       fetchProviders();
     } catch (error) {
       console.error('Failed to save provider:', error);
@@ -101,6 +102,7 @@ export default function ServiceProvidersPage() {
       email: provider.email,
       phone: provider.phone || '',
       address: provider.address || '',
+      password: '', // Don't pre-fill password for security
     });
     setShowModal(true);
   };
@@ -150,7 +152,7 @@ export default function ServiceProvidersPage() {
               <button
                 onClick={() => {
                   setEditingProvider(null);
-                  setFormData({ name: '', email: '', phone: '', address: '' });
+                  setFormData({ name: '', email: '', phone: '', address: '', password: '' });
                   setShowModal(true);
                 }}
                 className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
@@ -259,6 +261,19 @@ export default function ServiceProvidersPage() {
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   className="w-full border border-gray-300 rounded-md px-3 py-2"
                   rows={3}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Password {editingProvider ? '(leave blank to keep current)' : ''}
+                </label>
+                <input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  placeholder={editingProvider ? 'Leave blank to keep current password' : 'Enter password'}
+                  required={!editingProvider}
                 />
               </div>
               <div className="flex gap-2">
