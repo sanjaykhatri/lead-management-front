@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
+import { usePusherNotifications } from '@/hooks/usePusher';
 
 interface Notification {
   id: string;
@@ -16,10 +17,86 @@ export default function NotificationsBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [adminId, setAdminId] = useState<number | null>(null);
+
+  // Fetch admin ID
+  useEffect(() => {
+    const fetchAdminId = async () => {
+      try {
+        const response = await api.get('/admin/user');
+        setAdminId(response.data.user?.id || null);
+      } catch (error) {
+        console.error('Failed to fetch admin ID:', error);
+      }
+    };
+    fetchAdminId();
+  }, []);
+
+  // Handle real-time notifications - Lead Assigned
+  const handleLeadAssigned = useCallback((data: any) => {
+    const newNotification: Notification = {
+      id: `pusher-${Date.now()}-assigned`,
+      type: 'lead_assigned',
+      data: {
+        message: data.message || `New lead assigned: ${data.lead.name}`,
+        lead_id: data.lead.id,
+      },
+      read_at: null,
+      created_at: new Date().toISOString(),
+    };
+    setNotifications(prev => [newNotification, ...prev]);
+    setUnreadCount(prev => prev + 1);
+    fetchUnreadCount();
+    
+    // Trigger page refresh or update leads list if on dashboard
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('leadAssigned', { detail: data }));
+    }
+  }, []);
+
+  // Handle real-time notifications - Status Updated
+  const handleStatusUpdated = useCallback((data: any) => {
+    const newNotification: Notification = {
+      id: `pusher-${Date.now()}-status`,
+      type: 'lead_status_updated',
+      data: {
+        message: data.message || `Lead '${data.lead.name}' status changed`,
+        lead_id: data.lead.id,
+      },
+      read_at: null,
+      created_at: new Date().toISOString(),
+    };
+    setNotifications(prev => [newNotification, ...prev]);
+    setUnreadCount(prev => prev + 1);
+    fetchUnreadCount();
+    
+    // Trigger page refresh or update leads list if on dashboard
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('leadStatusUpdated', { detail: data }));
+    }
+  }, []);
+
+  // Setup Pusher for real-time notifications - Lead Assigned
+  usePusherNotifications(
+    adminId,
+    'admin',
+    'lead.assigned',
+    handleLeadAssigned,
+    false // isProvider
+  );
+
+  // Setup Pusher for real-time notifications - Status Updated
+  usePusherNotifications(
+    adminId,
+    'admin',
+    'lead.status.updated',
+    handleStatusUpdated,
+    false // isProvider
+  );
 
   useEffect(() => {
     fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 30000); // Poll every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000); // Poll every 30 seconds as fallback
     return () => clearInterval(interval);
   }, []);
 

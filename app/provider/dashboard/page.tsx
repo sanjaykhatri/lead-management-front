@@ -142,6 +142,23 @@ export default function ProviderDashboard() {
     checkAuth();
     fetchSubscriptionStatus();
     fetchLeads();
+
+    // Listen for real-time lead updates
+    const handleLeadAssigned = () => {
+      fetchLeads(); // Refresh leads when new lead is assigned
+    };
+
+    const handleStatusUpdated = () => {
+      fetchLeads(); // Refresh leads when status is updated
+    };
+
+    window.addEventListener('leadAssigned', handleLeadAssigned);
+    window.addEventListener('leadStatusUpdated', handleStatusUpdated);
+
+    return () => {
+      window.removeEventListener('leadAssigned', handleLeadAssigned);
+      window.removeEventListener('leadStatusUpdated', handleStatusUpdated);
+    };
   }, []);
 
   const checkAuth = () => {

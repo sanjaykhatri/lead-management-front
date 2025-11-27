@@ -30,36 +30,51 @@ export function usePusherNotifications(
         const response = await api.get(endpoint);
         const config = response.data as PusherConfig;
 
-        // Check if Pusher is enabled
-        if (!config.pusher_enabled || !config.pusher_app_key || !config.pusher_app_cluster) {
-          console.warn('Pusher not enabled or not configured');
+        // Config format from getByGroup: { pusher_enabled: true, pusher_app_key: '...', ... }
+        // Boolean values are already converted to actual booleans
+        const pusherEnabled = config.pusher_enabled === true || config.pusher_enabled === 'true';
+        const pusherKey = config.pusher_app_key || config.key || '';
+        const pusherCluster = config.pusher_app_cluster || config.cluster || '';
+
+        if (!pusherEnabled || !pusherKey || !pusherCluster) {
+          console.warn('Pusher not enabled or not configured', { 
+            pusherEnabled, 
+            pusherKey: pusherKey ? '***' : '', 
+            pusherCluster 
+          });
           return;
         }
 
         // Get base URL without /api suffix
         const baseURL = api.defaults.baseURL?.replace('/api', '') || 'http://localhost:8000';
         
-        const pusherKey = config.pusher_app_key || config.key;
-        const pusherCluster = config.pusher_app_cluster || config.cluster;
+        // pusherKey and pusherCluster are already extracted above
 
-        if (!pusherKey || !pusherCluster) {
-          console.warn('Pusher credentials missing');
-          return;
-        }
+        // Determine if it's a private channel (requires auth)
+        // Private channels start with 'private-' prefix
+        const isPrivateChannel = channelName.startsWith('private-');
 
         // Initialize Pusher
-        pusherRef.current = new Pusher(pusherKey, {
+        const pusherOptions: any = {
           cluster: pusherCluster,
-          authEndpoint: `${baseURL}/api/broadcasting/auth`,
-          auth: {
+          enabledTransports: ['ws', 'wss'],
+        };
+
+        // Add auth for private channels only
+        if (isPrivateChannel) {
+          pusherOptions.authEndpoint = `${baseURL}/api/broadcasting/auth`;
+          pusherOptions.auth = {
             headers: {
               Authorization: `Bearer ${localStorage.getItem('token')}`,
             },
-          },
-          enabledTransports: ['ws', 'wss'],
-        });
+          };
+        }
+
+        pusherRef.current = new Pusher(pusherKey, pusherOptions);
 
         // Subscribe to channel
+        // For public channels like 'admin', use as-is
+        // For private channels like 'private-provider.1', use as-is
         channelRef.current = pusherRef.current.subscribe(channelName);
 
         // Bind to event
