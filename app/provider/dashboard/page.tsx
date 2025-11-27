@@ -4,6 +4,23 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  useDroppable,
+  closestCenter,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface Lead {
   id: number;
@@ -21,14 +38,104 @@ interface Subscription {
   current_period_end: string | null;
 }
 
+// Kanban Card Component
+function KanbanCard({ lead, onView }: { lead: Lead; onView: () => void }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: lead.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    // Don't navigate if dragging
+    if (!isDragging) {
+      onView();
+    }
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      onClick={handleClick}
+      className="bg-white rounded-lg shadow p-4 mb-3 cursor-move hover:shadow-md transition-shadow"
+    >
+      <h3 className="font-semibold text-gray-900 mb-2">{lead.name}</h3>
+      <p className="text-sm text-gray-600 mb-1">{lead.email}</p>
+      <p className="text-sm text-gray-600 mb-2">{lead.phone}</p>
+      <div className="flex items-center justify-between mt-2">
+        <span className="text-xs text-gray-500">{lead.location?.name}</span>
+        <span className="text-xs text-gray-400">
+          {new Date(lead.created_at).toLocaleDateString()}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// Kanban Column Component
+function KanbanColumn({ 
+  id, 
+  title, 
+  leads, 
+  onView 
+}: { 
+  id: string; 
+  title: string; 
+  leads: Lead[]; 
+  onView: (lead: Lead) => void;
+}) {
+  const { setNodeRef } = useDroppable({ id });
+  const items = leads.map(lead => lead.id);
+
+  return (
+    <div ref={setNodeRef} className="flex-1 bg-gray-50 rounded-lg p-4 min-h-[500px]">
+      <h2 className="font-semibold text-gray-700 mb-4 sticky top-0 bg-gray-50 py-2">
+        {title} ({leads.length})
+      </h2>
+      <SortableContext items={items} strategy={verticalListSortingStrategy}>
+        {leads.map((lead) => (
+          <KanbanCard key={lead.id} lead={lead} onView={() => onView(lead)} />
+        ))}
+        {leads.length === 0 && (
+          <div className="text-center text-gray-400 py-8 text-sm">
+            No leads
+          </div>
+        )}
+      </SortableContext>
+    </div>
+  );
+}
+
 export default function ProviderDashboard() {
   const router = useRouter();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [viewMode, setViewMode] = useState<'table' | 'kanban'>('kanban');
+  const [activeId, setActiveId] = useState<number | null>(null);
   const [filters, setFilters] = useState({
     status: '',
   });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
   useEffect(() => {
     document.title = 'My Leads - Provider';
@@ -109,6 +216,50 @@ export default function ProviderDashboard() {
     fetchLeads();
   }, [filters]);
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as number);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (!over) return;
+
+    const leadId = active.id as number;
+    const newStatus = over.id as string;
+
+    // Check if dropped on a valid status column
+    if (!['new', 'contacted', 'closed'].includes(newStatus)) return;
+
+    // Find the lead
+    const lead = leads.find(l => l.id === leadId);
+    if (!lead || lead.status === newStatus) return;
+
+    // Optimistic update
+    const updatedLeads = leads.map(l =>
+      l.id === leadId ? { ...l, status: newStatus } : l
+    );
+    setLeads(updatedLeads);
+
+    // Update on server
+    try {
+      await api.put(`/provider/leads/${leadId}`, { status: newStatus });
+    } catch (error: any) {
+      // Revert on error
+      setLeads(leads);
+      alert('Failed to update lead status. Please try again.');
+    }
+  };
+
+  const getLeadsByStatus = (status: string) => {
+    return leads.filter(lead => lead.status === status);
+  };
+
+  const handleViewLead = (lead: Lead) => {
+    router.push(`/provider/leads/${lead.id}`);
+  };
+
   if (loading) {
     return <div className="p-8">Loading...</div>;
   }
@@ -158,7 +309,31 @@ export default function ProviderDashboard() {
             </div>
           )}
           <div className="bg-white shadow rounded-lg p-6 mb-6">
-            <h2 className="text-lg font-semibold mb-4">Filters</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Filters</h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium ${
+                    viewMode === 'table'
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Table View
+                </button>
+                <button
+                  onClick={() => setViewMode('kanban')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium ${
+                    viewMode === 'kanban'
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Kanban Board
+                </button>
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
@@ -176,7 +351,45 @@ export default function ProviderDashboard() {
             </div>
           </div>
 
-          <div className="bg-white shadow rounded-lg overflow-hidden">
+          {viewMode === 'kanban' ? (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <KanbanColumn
+                  id="new"
+                  title="New"
+                  leads={getLeadsByStatus('new')}
+                  onView={handleViewLead}
+                />
+                <KanbanColumn
+                  id="contacted"
+                  title="Contacted"
+                  leads={getLeadsByStatus('contacted')}
+                  onView={handleViewLead}
+                />
+                <KanbanColumn
+                  id="closed"
+                  title="Closed"
+                  leads={getLeadsByStatus('closed')}
+                  onView={handleViewLead}
+                />
+              </div>
+              <DragOverlay>
+                {activeId ? (
+                  <div className="bg-white rounded-lg shadow-lg p-4 w-64">
+                    <h3 className="font-semibold text-gray-900">
+                      {leads.find(l => l.id === activeId)?.name}
+                    </h3>
+                  </div>
+                ) : null}
+              </DragOverlay>
+            </DndContext>
+          ) : (
+            <div className="bg-white shadow rounded-lg overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -227,6 +440,7 @@ export default function ProviderDashboard() {
               </tbody>
             </table>
           </div>
+          )}
         </div>
       </main>
     </div>
