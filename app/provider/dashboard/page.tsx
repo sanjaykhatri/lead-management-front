@@ -20,7 +20,6 @@ import {
   verticalListSortingStrategy,
   useSortable,
 } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 
 interface Lead {
   id: number;
@@ -50,7 +49,7 @@ function KanbanCard({ lead, onView }: { lead: Lead; onView: () => void }) {
   } = useSortable({ id: lead.id });
 
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
