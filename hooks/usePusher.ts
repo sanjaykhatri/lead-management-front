@@ -23,7 +23,7 @@ interface PusherEventData {
 
 export function usePusherNotifications(
   userId: string | number | null,
-  channelName: string,
+  channelName: string | null,
   eventName: string,
   onEvent: (data: PusherEventData) => void,
   isProvider: boolean = false
@@ -32,12 +32,17 @@ export function usePusherNotifications(
   const channelRef = useRef<ReturnType<Pusher['subscribe']> | null>(null);
 
   useEffect(() => {
-    if (!channelName) {
-      console.log('Pusher: Channel name missing', { channelName, userId });
+    // Don't setup if channelName is null or empty
+    if (!channelName || channelName === '') {
+      if (channelName === '') {
+        // Only log if it's an empty string (not null), as null means we're waiting
+        console.log('Pusher: Channel name missing, waiting...', { userId });
+      }
       return;
     }
 
     // For public channels like 'admin', userId can be null
+    // For private channels, userId is required
     if (channelName.startsWith('private-') && !userId) {
       console.log('Pusher: Waiting for userId for private channel', { channelName });
       return;

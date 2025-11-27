@@ -76,18 +76,20 @@ export default function ProviderNotificationsBell() {
   }, []);
 
   // Setup Pusher for real-time notifications - Lead Assigned
+  // Only setup if providerId is available
   usePusherNotifications(
     providerId,
-    providerId ? `private-provider.${providerId}` : '',
+    providerId ? `private-provider.${providerId}` : null,
     'lead.assigned',
     handleLeadAssigned,
     true // isProvider
   );
 
   // Setup Pusher for real-time notifications - Status Updated
+  // Only setup if providerId is available
   usePusherNotifications(
     providerId,
-    providerId ? `private-provider.${providerId}` : '',
+    providerId ? `private-provider.${providerId}` : null,
     'lead.status.updated',
     handleStatusUpdated,
     true // isProvider
