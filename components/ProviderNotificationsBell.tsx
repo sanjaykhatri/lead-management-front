@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
+import { usePusherNotifications } from '@/hooks/usePusher';
 
 interface Notification {
   id: string;
@@ -16,10 +17,52 @@ export default function ProviderNotificationsBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [providerId, setProviderId] = useState<number | null>(null);
+
+  // Fetch provider ID
+  useEffect(() => {
+    const fetchProviderId = async () => {
+      try {
+        const response = await api.get('/provider/user');
+        setProviderId(response.data.provider?.id || null);
+      } catch (error) {
+        console.error('Failed to fetch provider ID:', error);
+      }
+    };
+    fetchProviderId();
+  }, []);
+
+  // Handle real-time notifications
+  const handleLeadAssigned = useCallback((data: any) => {
+    // Add new notification
+    const newNotification: Notification = {
+      id: `pusher-${Date.now()}`,
+      type: 'lead_assigned',
+      data: {
+        message: `New lead assigned: ${data.lead.name}`,
+        lead_id: data.lead.id,
+      },
+      read_at: null,
+      created_at: new Date().toISOString(),
+    };
+    setNotifications(prev => [newNotification, ...prev]);
+    setUnreadCount(prev => prev + 1);
+    // Also refresh the count from server
+    fetchUnreadCount();
+  }, []);
+
+  // Setup Pusher for real-time notifications
+  usePusherNotifications(
+    providerId,
+    providerId ? `private-provider.${providerId}` : '',
+    'lead.assigned',
+    handleLeadAssigned,
+    true // isProvider
+  );
 
   useEffect(() => {
     fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 30000); // Poll every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000); // Poll every 30 seconds as fallback
     return () => clearInterval(interval);
   }, []);
 
