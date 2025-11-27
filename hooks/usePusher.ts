@@ -10,15 +10,26 @@ interface PusherConfig {
   cluster?: string; // Fallback
 }
 
+interface PusherEventData {
+  type?: string;
+  lead?: {
+    id: number;
+    name: string;
+    [key: string]: unknown;
+  };
+  message?: string;
+  [key: string]: unknown;
+}
+
 export function usePusherNotifications(
   userId: string | number | null,
   channelName: string,
   eventName: string,
-  onEvent: (data: any) => void,
+  onEvent: (data: PusherEventData) => void,
   isProvider: boolean = false
 ) {
   const pusherRef = useRef<Pusher | null>(null);
-  const channelRef = useRef<any>(null);
+  const channelRef = useRef<ReturnType<Pusher['subscribe']> | null>(null);
 
   useEffect(() => {
     if (!channelName) {
@@ -49,7 +60,7 @@ export function usePusherNotifications(
 
         // Config format from getByGroup: { pusher_enabled: true, pusher_app_key: '...', ... }
         // Boolean values are already converted to actual booleans
-        const pusherEnabled = config.pusher_enabled === true || config.pusher_enabled === 'true';
+        const pusherEnabled = config.pusher_enabled === true || String(config.pusher_enabled) === 'true';
         const pusherKey = config.pusher_app_key || config.key || '';
         const pusherCluster = config.pusher_app_cluster || config.cluster || '';
 
@@ -74,9 +85,18 @@ export function usePusherNotifications(
         const isPrivateChannel = channelName.startsWith('private-');
 
         // Initialize Pusher
-        const pusherOptions: any = {
+        const pusherOptions: {
+          cluster: string;
+          enabledTransports: ('ws' | 'wss')[];
+          authEndpoint?: string;
+          auth?: {
+            headers: {
+              Authorization: string;
+            };
+          };
+        } = {
           cluster: pusherCluster,
-          enabledTransports: ['ws', 'wss'],
+          enabledTransports: ['ws', 'wss'] as ('ws' | 'wss')[],
         };
 
         // Add auth for private channels only
@@ -104,11 +124,11 @@ export function usePusherNotifications(
           console.log('❌ Pusher disconnected', { channelName });
         });
 
-        pusherRef.current.connection.bind('error', (err: any) => {
+        pusherRef.current.connection.bind('error', (err: Error) => {
           console.error('❌ Pusher connection error:', err, { channelName });
         });
 
-        pusherRef.current.connection.bind('state_change', (states: any) => {
+        pusherRef.current.connection.bind('state_change', (states: { previous: string; current: string }) => {
           console.log('🔄 Pusher state changed:', states.previous, '->', states.current, { channelName });
         });
 
@@ -121,20 +141,22 @@ export function usePusherNotifications(
           console.log('✅ Pusher channel subscribed successfully', { channelName });
         });
 
-        channelRef.current.bind('pusher:subscription_error', (err: any) => {
+        channelRef.current.bind('pusher:subscription_error', (err: Error) => {
           console.error('❌ Pusher subscription error:', err, { channelName });
         });
 
         // Bind to event
         console.log('Pusher: Binding to event', { eventName, channelName });
-        channelRef.current.bind(eventName, (data: any) => {
+        channelRef.current.bind(eventName, (data: PusherEventData) => {
           console.log('📨 Pusher event received', { eventName, channelName, data });
           onEvent(data);
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const errorResponse = (error as { response?: { data?: unknown } })?.response?.data;
         console.error('❌ Failed to setup Pusher:', error, {
-          message: error.message,
-          response: error.response?.data,
+          message: errorMessage,
+          response: errorResponse,
           channelName
         });
       }
