@@ -25,6 +25,15 @@ interface ServiceProvider {
   name: string;
 }
 
+interface LeadNote {
+  id: number;
+  note: string;
+  type: string;
+  created_at: string;
+  user: { name: string } | null;
+  service_provider: { name: string } | null;
+}
+
 export default function LeadDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -36,12 +45,16 @@ export default function LeadDetailPage() {
   const [status, setStatus] = useState('');
   const [selectedProvider, setSelectedProvider] = useState('');
   const [saving, setSaving] = useState(false);
+  const [notes, setNotes] = useState<LeadNote[]>([]);
+  const [newNote, setNewNote] = useState('');
+  const [loadingNotes, setLoadingNotes] = useState(false);
 
   useEffect(() => {
     document.title = 'Lead Details - Admin';
     checkAuth();
     fetchLead();
     fetchProviders();
+    fetchNotes();
   }, []);
 
   const checkAuth = () => {
@@ -95,10 +108,37 @@ export default function LeadDetailPage() {
         service_provider_id: parseInt(selectedProvider),
       });
       await fetchLead();
+      await fetchNotes();
     } catch (error) {
       console.error('Failed to reassign:', error);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const fetchNotes = async () => {
+    try {
+      setLoadingNotes(true);
+      const response = await api.get(`/admin/leads/${leadId}/notes`);
+      setNotes(response.data);
+    } catch (error) {
+      console.error('Failed to fetch notes:', error);
+    } finally {
+      setLoadingNotes(false);
+    }
+  };
+
+  const handleAddNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNote.trim()) return;
+
+    try {
+      await api.post(`/admin/leads/${leadId}/notes`, { note: newNote });
+      setNewNote('');
+      await fetchNotes();
+    } catch (error) {
+      console.error('Failed to add note:', error);
+      alert('Failed to add note');
     }
   };
 
@@ -217,6 +257,56 @@ export default function LeadDetailPage() {
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Notes Section */}
+          <div className="bg-white shadow rounded-lg p-6">
+            <h2 className="text-xl font-bold mb-4">Notes & History</h2>
+            
+            <form onSubmit={handleAddNote} className="mb-6">
+              <textarea
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                placeholder="Add a note..."
+                className="w-full border border-gray-300 rounded-md px-3 py-2 mb-2"
+                rows={3}
+              />
+              <button
+                type="submit"
+                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
+              >
+                Add Note
+              </button>
+            </form>
+
+            <div className="space-y-4">
+              {loadingNotes ? (
+                <p className="text-gray-500">Loading notes...</p>
+              ) : notes.length === 0 ? (
+                <p className="text-gray-500">No notes yet</p>
+              ) : (
+                notes.map((note) => (
+                  <div key={note.id} className="border-l-4 border-indigo-500 pl-4 py-2">
+                    <div className="flex justify-between items-start mb-1">
+                      <div>
+                        <p className="text-sm text-gray-600">
+                          {note.user?.name || note.service_provider?.name || 'System'}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {new Date(note.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                      {note.type !== 'note' && (
+                        <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                          {note.type}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-gray-900">{note.note}</p>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

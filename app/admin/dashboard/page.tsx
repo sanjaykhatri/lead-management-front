@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
+import NotificationsBell from '@/components/NotificationsBell';
 
 interface Lead {
   id: number;
@@ -68,6 +69,32 @@ export default function AdminDashboard() {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
+  const handleExportCsv = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (filters.location_id) params.append('location_id', filters.location_id);
+      if (filters.status) params.append('status', filters.status);
+      if (filters.date_from) params.append('date_from', filters.date_from);
+      if (filters.date_to) params.append('date_to', filters.date_to);
+
+      const response = await api.get(`/admin/leads/export/csv?${params.toString()}`, {
+        responseType: 'blob',
+      });
+
+      // Create blob and download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `leads_export_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error: any) {
+      console.error('Failed to export CSV:', error);
+      alert('Failed to export CSV. Please try again.');
+    }
+  };
+
   useEffect(() => {
     fetchLeads();
   }, [filters]);
@@ -95,9 +122,19 @@ export default function AdminDashboard() {
                 <Link href="/admin/locations" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                   Locations
                 </Link>
+                <Link href="/admin/analytics" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                  Analytics
+                </Link>
               </div>
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center gap-4">
+              <NotificationsBell />
+              <button
+                onClick={handleExportCsv}
+                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 text-sm font-medium"
+              >
+                Export CSV
+              </button>
               <button
                 onClick={handleLogout}
                 className="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium"

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
+import ProviderNotificationsBell from '@/components/ProviderNotificationsBell';
 import {
   DndContext,
   DragEndEvent,
@@ -272,6 +273,7 @@ export default function ProviderDashboard() {
               <h1 className="text-xl font-bold text-gray-900">My Leads</h1>
             </div>
             <div className="flex items-center gap-4">
+              <ProviderNotificationsBell />
               <Link
                 href="/provider/profile"
                 className="text-green-600 hover:text-green-700 px-3 py-2 text-sm font-medium"

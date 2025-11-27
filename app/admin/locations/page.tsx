@@ -31,6 +31,7 @@ export default function LocationsPage() {
     name: '',
     slug: '',
     address: '',
+    assignment_algorithm: 'round_robin',
   });
   const [selectedProviders, setSelectedProviders] = useState<number[]>([]);
 
@@ -80,7 +81,7 @@ export default function LocationsPage() {
       }
       setShowModal(false);
       setEditingLocation(null);
-      setFormData({ name: '', slug: '', address: '' });
+      setFormData({ name: '', slug: '', address: '', assignment_algorithm: 'round_robin' });
       fetchLocations();
     } catch (error) {
       console.error('Failed to save location:', error);
@@ -110,6 +111,7 @@ export default function LocationsPage() {
       name: location.name,
       slug: location.slug,
       address: location.address || '',
+      assignment_algorithm: (location as any).assignment_algorithm || 'round_robin',
     });
     setShowModal(true);
   };
@@ -149,7 +151,7 @@ export default function LocationsPage() {
               <button
                 onClick={() => {
                   setEditingLocation(null);
-                  setFormData({ name: '', slug: '', address: '' });
+                  setFormData({ name: '', slug: '', address: '', assignment_algorithm: 'round_robin' });
                   setShowModal(true);
                 }}
                 className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
@@ -170,6 +172,7 @@ export default function LocationsPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Slug</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Address</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Algorithm</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Providers</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
@@ -180,6 +183,11 @@ export default function LocationsPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{location.name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{location.slug}</td>
                     <td className="px-6 py-4 text-sm text-gray-500">{location.address || '-'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 capitalize">
+                        {(location as any).assignment_algorithm || 'round_robin'}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
                       {location.service_providers.length > 0
                         ? location.service_providers.map(p => p.name).join(', ')
@@ -243,6 +251,19 @@ export default function LocationsPage() {
                   className="w-full border border-gray-300 rounded-md px-3 py-2"
                   rows={3}
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Assignment Algorithm</label>
+                <select
+                  value={formData.assignment_algorithm}
+                  onChange={(e) => setFormData({ ...formData, assignment_algorithm: e.target.value })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                >
+                  <option value="round_robin">Round Robin</option>
+                  <option value="geographic">Geographic</option>
+                  <option value="load_balance">Load Balance</option>
+                  <option value="manual">Manual</option>
+                </select>
               </div>
               <div className="flex gap-2">
                 <button
