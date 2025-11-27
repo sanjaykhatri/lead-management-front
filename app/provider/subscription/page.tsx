@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
@@ -12,7 +12,7 @@ interface Subscription {
   stripe_customer_id: string;
 }
 
-export default function ProviderSubscriptionPage() {
+function SubscriptionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -193,6 +193,14 @@ export default function ProviderSubscriptionPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function ProviderSubscriptionPage() {
+  return (
+    <Suspense fallback={<div className="p-8">Loading...</div>}>
+      <SubscriptionContent />
+    </Suspense>
   );
 }
 
