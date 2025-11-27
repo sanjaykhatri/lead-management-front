@@ -123,6 +123,12 @@ export default function ProviderDashboard() {
             </div>
             <div className="flex items-center gap-4">
               <Link
+                href="/provider/profile"
+                className="text-green-600 hover:text-green-700 px-3 py-2 text-sm font-medium"
+              >
+                Profile
+              </Link>
+              <Link
                 href="/provider/subscription"
                 className="text-indigo-600 hover:text-indigo-700 px-3 py-2 text-sm font-medium"
               >
