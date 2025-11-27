@@ -35,13 +35,35 @@ const setupApiInterceptors = () => {
     return config;
   });
 
-  // Handle 401 errors (unauthorized)
+  // Handle 401/403 errors (unauthorized/forbidden)
   api.interceptors.response.use(
     (response) => response,
     (error) => {
-      if (error.response?.status === 401 && typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-        window.location.href = '/admin/login';
+      if ((error.response?.status === 401 || error.response?.status === 403) && typeof window !== 'undefined') {
+        const currentPath = window.location.pathname;
+        
+        // Don't redirect if we're already on a login page or signup page
+        // Let the login page handle the error display
+        if (currentPath.includes('/login') || currentPath.includes('/signup')) {
+          // Only remove token, don't redirect - let the page show the error
+          if (error.response?.status === 401) {
+            localStorage.removeItem('token');
+          }
+          return Promise.reject(error);
+        }
+        
+        // Only redirect to admin login if we're not on provider pages
+        if (!currentPath.includes('/provider')) {
+          if (error.response?.status === 401) {
+            localStorage.removeItem('token');
+            window.location.href = '/admin/login';
+          }
+        } else {
+          // For provider pages, just remove token but don't redirect
+          if (error.response?.status === 401) {
+            localStorage.removeItem('token');
+          }
+        }
       }
       return Promise.reject(error);
     }
