@@ -16,10 +16,16 @@ interface Lead {
   service_provider: { name: string } | null;
 }
 
+interface Subscription {
+  status: string;
+  current_period_end: string | null;
+}
+
 export default function ProviderDashboard() {
   const router = useRouter();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [filters, setFilters] = useState({
     status: '',
   });
@@ -27,6 +33,7 @@ export default function ProviderDashboard() {
   useEffect(() => {
     document.title = 'My Leads - Provider';
     checkAuth();
+    fetchSubscriptionStatus();
     fetchLeads();
   }, []);
 
@@ -36,6 +43,24 @@ export default function ProviderDashboard() {
       router.push('/provider/login');
     } else {
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    }
+  };
+
+  const fetchSubscriptionStatus = async () => {
+    try {
+      const response = await api.get('/provider/subscription/status');
+      setSubscription(response.data.subscription);
+      
+      // If no active subscription, redirect to subscription page
+      if (!response.data.has_active_subscription) {
+        router.push('/provider/subscription');
+        return;
+      }
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        router.push('/provider/login');
+      }
     }
   };
 
@@ -50,6 +75,9 @@ export default function ProviderDashboard() {
       if (error.response?.status === 401) {
         localStorage.removeItem('token');
         router.push('/provider/login');
+      } else if (error.response?.status === 403) {
+        // Subscription not active
+        router.push('/provider/subscription');
       } else {
         console.error('Failed to fetch leads:', error);
       }
@@ -88,7 +116,13 @@ export default function ProviderDashboard() {
             <div className="flex items-center">
               <h1 className="text-xl font-bold text-gray-900">My Leads</h1>
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center gap-4">
+              <Link
+                href="/provider/subscription"
+                className="text-indigo-600 hover:text-indigo-700 px-3 py-2 text-sm font-medium"
+              >
+                Subscription
+              </Link>
               <button
                 onClick={handleLogout}
                 className="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium"
@@ -102,6 +136,16 @@ export default function ProviderDashboard() {
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
+          {subscription && subscription.status === 'active' && (
+            <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded mb-4">
+              <p className="font-semibold">✓ Your subscription is active</p>
+              {subscription.current_period_end && (
+                <p className="text-sm mt-1">
+                  Renews on: {new Date(subscription.current_period_end).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+          )}
           <div className="bg-white shadow rounded-lg p-6 mb-6">
             <h2 className="text-lg font-semibold mb-4">Filters</h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import api from '@/lib/api';
 
 export default function ProviderLoginPage() {
@@ -25,7 +26,13 @@ export default function ProviderLoginPage() {
     try {
       const response = await api.post('/provider/login', formData);
       localStorage.setItem('token', response.data.token);
-      router.push('/provider/dashboard');
+      
+      // Check subscription status
+      if (!response.data.has_active_subscription) {
+        router.push('/provider/subscription');
+      } else {
+        router.push('/provider/dashboard');
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed. Please try again.');
     } finally {
@@ -40,6 +47,12 @@ export default function ProviderLoginPage() {
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Provider Login
           </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Don't have an account?{' '}
+            <Link href="/provider/signup" className="font-medium text-indigo-600 hover:text-indigo-500">
+              Sign up
+            </Link>
+          </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
