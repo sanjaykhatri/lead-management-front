@@ -11,6 +11,7 @@ interface ServiceProvider {
   email: string;
   phone: string;
   address: string;
+  is_active: boolean;
   stripe_subscription: {
     status: string;
     current_period_end: string | null;
@@ -74,6 +75,31 @@ export default function ServiceProvidersPage() {
     } catch (error) {
       console.error('Failed to open billing portal:', error);
       alert('Failed to open billing portal');
+    }
+  };
+
+  const handleActivate = async (providerId: number) => {
+    try {
+      await api.post(`/admin/service-providers/${providerId}/activate`);
+      fetchProviders();
+      alert('Provider account activated successfully');
+    } catch (error) {
+      console.error('Failed to activate provider:', error);
+      alert('Failed to activate provider');
+    }
+  };
+
+  const handleDeactivate = async (providerId: number) => {
+    if (!confirm('Are you sure you want to deactivate this provider? They will not be able to login or access leads.')) {
+      return;
+    }
+    try {
+      await api.post(`/admin/service-providers/${providerId}/deactivate`);
+      fetchProviders();
+      alert('Provider account deactivated successfully');
+    } catch (error) {
+      console.error('Failed to deactivate provider:', error);
+      alert('Failed to deactivate provider');
     }
   };
 
@@ -173,6 +199,7 @@ export default function ServiceProvidersPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subscription</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
@@ -184,6 +211,13 @@ export default function ServiceProvidersPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{provider.email}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{provider.phone || '-'}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
+                      {provider.is_active ? (
+                        <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Active</span>
+                      ) : (
+                        <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Inactive</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(provider.stripe_subscription?.status || null)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
@@ -193,6 +227,21 @@ export default function ServiceProvidersPage() {
                       >
                         Edit
                       </button>
+                      {provider.is_active ? (
+                        <button
+                          onClick={() => handleDeactivate(provider.id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Deactivate
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleActivate(provider.id)}
+                          className="text-green-600 hover:text-green-900"
+                        >
+                          Activate
+                        </button>
+                      )}
                       {!provider.stripe_subscription && (
                         <button
                           onClick={() => handleCreateCheckout(provider.id)}

@@ -76,8 +76,13 @@ export default function ProviderDashboard() {
         localStorage.removeItem('token');
         router.push('/provider/login');
       } else if (error.response?.status === 403) {
-        // Subscription not active
-        router.push('/provider/subscription');
+        // Check if account is inactive or subscription is inactive
+        if (error.response?.data?.account_inactive) {
+          alert('Your account has been deactivated. Please contact admin to activate your account.');
+        } else {
+          // Subscription not active
+          router.push('/provider/subscription');
+        }
       } else {
         console.error('Failed to fetch leads:', error);
       }

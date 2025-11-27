@@ -34,7 +34,13 @@ export default function ProviderLoginPage() {
         router.push('/provider/dashboard');
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      const errorMessage = err.response?.data?.message || 'Login failed. Please try again.';
+      setError(errorMessage);
+      
+      // Show specific message for inactive accounts
+      if (err.response?.data?.account_inactive) {
+        setError('Your account has been deactivated. Please contact admin to activate your account.');
+      }
     } finally {
       setIsLoading(false);
     }
