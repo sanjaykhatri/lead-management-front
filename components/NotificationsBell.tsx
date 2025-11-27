@@ -77,8 +77,9 @@ export default function NotificationsBell() {
   }, []);
 
   // Setup Pusher for real-time notifications - Lead Assigned
+  // Admin channel is public, so we can use 'admin' as userId placeholder
   usePusherNotifications(
-    adminId,
+    'admin', // Public channel doesn't need real userId
     'admin',
     'lead.assigned',
     handleLeadAssigned,
@@ -87,7 +88,7 @@ export default function NotificationsBell() {
 
   // Setup Pusher for real-time notifications - Status Updated
   usePusherNotifications(
-    adminId,
+    'admin', // Public channel doesn't need real userId
     'admin',
     'lead.status.updated',
     handleStatusUpdated,

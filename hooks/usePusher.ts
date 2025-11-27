@@ -21,14 +21,31 @@ export function usePusherNotifications(
   const channelRef = useRef<any>(null);
 
   useEffect(() => {
-    if (!userId || !channelName) return;
+    if (!channelName) {
+      console.log('Pusher: Channel name missing', { channelName, userId });
+      return;
+    }
+
+    // For public channels like 'admin', userId can be null
+    if (channelName.startsWith('private-') && !userId) {
+      console.log('Pusher: Waiting for userId for private channel', { channelName });
+      return;
+    }
 
     // Fetch Pusher config from backend
     const setupPusher = async () => {
       try {
+        console.log('Pusher: Setting up...', { endpoint: isProvider ? '/provider/settings/pusher' : '/admin/settings/group/pusher', channelName });
         const endpoint = isProvider ? '/provider/settings/pusher' : '/admin/settings/group/pusher';
         const response = await api.get(endpoint);
         const config = response.data as PusherConfig;
+
+        console.log('Pusher: Config received', { 
+          configKeys: Object.keys(config),
+          pusher_enabled: config.pusher_enabled,
+          has_key: !!config.pusher_app_key,
+          has_cluster: !!config.pusher_app_cluster
+        });
 
         // Config format from getByGroup: { pusher_enabled: true, pusher_app_key: '...', ... }
         // Boolean values are already converted to actual booleans
@@ -44,6 +61,8 @@ export function usePusherNotifications(
           });
           return;
         }
+
+        console.log('Pusher: Config valid, initializing...', { cluster: pusherCluster, channelName });
 
         // Get base URL without /api suffix
         const baseURL = api.defaults.baseURL?.replace('/api', '') || 'http://localhost:8000';
@@ -72,24 +91,52 @@ export function usePusherNotifications(
 
         pusherRef.current = new Pusher(pusherKey, pusherOptions);
 
-        // Subscribe to channel
-        // For public channels like 'admin', use as-is
-        // For private channels like 'private-provider.1', use as-is
-        channelRef.current = pusherRef.current.subscribe(channelName);
-
-        // Bind to event
-        channelRef.current.bind(eventName, onEvent);
-
-        // Connection status
+        // Connection status callbacks
         pusherRef.current.connection.bind('connected', () => {
-          console.log('Pusher connected');
+          console.log('✅ Pusher connected successfully', { channelName, eventName });
+        });
+
+        pusherRef.current.connection.bind('connecting', () => {
+          console.log('🔄 Pusher connecting...', { channelName });
+        });
+
+        pusherRef.current.connection.bind('disconnected', () => {
+          console.log('❌ Pusher disconnected', { channelName });
         });
 
         pusherRef.current.connection.bind('error', (err: any) => {
-          console.error('Pusher error:', err);
+          console.error('❌ Pusher connection error:', err, { channelName });
         });
-      } catch (error) {
-        console.error('Failed to setup Pusher:', error);
+
+        pusherRef.current.connection.bind('state_change', (states: any) => {
+          console.log('🔄 Pusher state changed:', states.previous, '->', states.current, { channelName });
+        });
+
+        // Subscribe to channel
+        console.log('Pusher: Subscribing to channel', { channelName, isPrivateChannel });
+        channelRef.current = pusherRef.current.subscribe(channelName);
+
+        // Channel subscription callbacks
+        channelRef.current.bind('pusher:subscription_succeeded', () => {
+          console.log('✅ Pusher channel subscribed successfully', { channelName });
+        });
+
+        channelRef.current.bind('pusher:subscription_error', (err: any) => {
+          console.error('❌ Pusher subscription error:', err, { channelName });
+        });
+
+        // Bind to event
+        console.log('Pusher: Binding to event', { eventName, channelName });
+        channelRef.current.bind(eventName, (data: any) => {
+          console.log('📨 Pusher event received', { eventName, channelName, data });
+          onEvent(data);
+        });
+      } catch (error: any) {
+        console.error('❌ Failed to setup Pusher:', error, {
+          message: error.message,
+          response: error.response?.data,
+          channelName
+        });
       }
     };
 
@@ -105,6 +152,6 @@ export function usePusherNotifications(
         pusherRef.current.disconnect();
       }
     };
-  }, [userId, channelName, eventName, onEvent]);
+  }, [userId, channelName, eventName, onEvent, isProvider]);
 }
 
