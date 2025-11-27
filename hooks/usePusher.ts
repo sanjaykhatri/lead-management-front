@@ -64,10 +64,17 @@ export function usePusherNotifications(
         });
 
         // Config format from getByGroup: { pusher_enabled: true, pusher_app_key: '...', ... }
-        // Boolean values are already converted to actual booleans
-        const pusherEnabled = config.pusher_enabled === true || String(config.pusher_enabled) === 'true';
+        // Boolean values can be boolean or string 'true'/'false'
+        const pusherEnabled = config.pusher_enabled === true || String(config.pusher_enabled).toLowerCase() === 'true';
         const pusherKey = config.pusher_app_key || config.key || '';
         const pusherCluster = config.pusher_app_cluster || config.cluster || '';
+        
+        console.log('Pusher: Parsed config', {
+          pusherEnabled,
+          hasKey: !!pusherKey,
+          cluster: pusherCluster,
+          rawEnabled: config.pusher_enabled,
+        });
 
         if (!pusherEnabled || !pusherKey || !pusherCluster) {
           console.warn('Pusher not enabled or not configured', { 
