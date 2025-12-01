@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { usePusherNotifications } from '@/hooks/usePusher';
 
@@ -34,11 +35,19 @@ export default function ProviderNotificationsBell() {
 
   // Handle real-time notifications
   const handleLeadAssigned = useCallback((data: any) => {
+    const message = data.message || `New lead assigned: ${data.lead.name}`;
+    
+    // Show toast notification
+    toast.success(message, {
+      icon: '🔔',
+      duration: 4000,
+    });
+
     const newNotification: Notification = {
       id: `pusher-${Date.now()}-assigned`,
       type: 'lead_assigned',
       data: {
-        message: data.message || `New lead assigned: ${data.lead.name}`,
+        message: message,
         lead_id: data.lead.id,
       },
       read_at: null,
@@ -55,11 +64,19 @@ export default function ProviderNotificationsBell() {
   }, []);
 
   const handleStatusUpdated = useCallback((data: any) => {
+    const message = data.message || `Lead '${data.lead.name}' status changed from ${data.lead.old_status || 'N/A'} to ${data.lead.status}`;
+    
+    // Show toast notification
+    toast.success(message, {
+      icon: '📝',
+      duration: 4000,
+    });
+
     const newNotification: Notification = {
       id: `pusher-${Date.now()}-status`,
       type: 'lead_status_updated',
       data: {
-        message: data.message || `Lead '${data.lead.name}' status changed`,
+        message: message,
         lead_id: data.lead.id,
       },
       read_at: null,
@@ -72,6 +89,37 @@ export default function ProviderNotificationsBell() {
     // Trigger page refresh or update leads list if on dashboard
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('leadStatusUpdated', { detail: data }));
+    }
+  }, []);
+
+  // Handle real-time notifications - Note Created
+  const handleNoteCreated = useCallback((data: any) => {
+    const message = data.message || `New note added to lead '${data.lead.name}' by ${data.note.created_by || 'Someone'}`;
+    
+    // Show toast notification
+    toast.success(message, {
+      icon: '💬',
+      duration: 4000,
+    });
+
+    const newNotification: Notification = {
+      id: `pusher-${Date.now()}-note`,
+      type: 'lead_note_created',
+      data: {
+        message: message,
+        lead_id: data.lead.id,
+        note_id: data.note.id,
+      },
+      read_at: null,
+      created_at: new Date().toISOString(),
+    };
+    setNotifications(prev => [newNotification, ...prev]);
+    setUnreadCount(prev => prev + 1);
+    fetchUnreadCount();
+    
+    // Trigger page refresh for notes if on lead detail page
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('leadNoteCreated', { detail: data }));
     }
   }, []);
 
@@ -92,6 +140,16 @@ export default function ProviderNotificationsBell() {
     providerId ? `private-provider.${providerId}` : null,
     'lead.status.updated',
     handleStatusUpdated,
+    true // isProvider
+  );
+
+  // Setup Pusher for real-time notifications - Note Created
+  // Only setup if providerId is available
+  usePusherNotifications(
+    providerId,
+    providerId ? `private-provider.${providerId}` : null,
+    'lead.note.created',
+    handleNoteCreated,
     true // isProvider
   );
 

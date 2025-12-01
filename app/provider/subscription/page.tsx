@@ -2,7 +2,8 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import toast from 'react-hot-toast';
+import ProviderNavigation from '@/components/ProviderNavigation';
 import api from '@/lib/api';
 
 interface Subscription {
@@ -10,30 +11,50 @@ interface Subscription {
   status: string;
   current_period_end: string | null;
   stripe_customer_id: string;
+  subscription_plan_id: number | null;
+  current_plan?: {
+    id: number;
+    name: string;
+    price: number | string;
+    interval: string;
+  };
+}
+
+interface Plan {
+  id: number;
+  name: string;
+  stripe_price_id: string;
+  price: number | string;
+  interval: 'monthly' | 'yearly';
+  trial_days: number;
+  features: string[];
+  is_active: boolean;
 }
 
 function SubscriptionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
 
   useEffect(() => {
     document.title = 'Subscription - Provider';
     checkAuth();
-    fetchSubscriptionStatus();
+    fetchData();
     
     // Check for success/cancel from Stripe
     const success = searchParams.get('success');
     const canceled = searchParams.get('canceled');
     
     if (success === 'true') {
-      alert('Subscription successful! Your account is now active.');
-      fetchSubscriptionStatus();
+      toast.success('Subscription successful! Your account is now active.');
+      fetchData();
     }
     if (canceled === 'true') {
-      alert('Subscription was canceled.');
+      toast.error('Subscription was canceled.');
     }
   }, [searchParams]);
 
@@ -46,30 +67,60 @@ function SubscriptionContent() {
     }
   };
 
-  const fetchSubscriptionStatus = async () => {
+  const fetchData = async () => {
     try {
-      const response = await api.get('/provider/subscription/status');
-      setSubscription(response.data.subscription);
+      const [statusResponse, plansResponse] = await Promise.all([
+        api.get('/provider/subscription/status'),
+        api.get('/provider/subscription/plans'),
+      ]);
+      setSubscription(statusResponse.data.subscription);
+      setPlans(plansResponse.data);
+      if (statusResponse.data.current_plan) {
+        setSelectedPlanId(statusResponse.data.current_plan.id);
+      }
     } catch (error: any) {
       if (error.response?.status === 401) {
         localStorage.removeItem('token');
         router.push('/provider/login');
       } else {
-        console.error('Failed to fetch subscription:', error);
+        console.error('Failed to fetch data:', error);
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubscribe = async () => {
+  const handleSubscribe = async (planId: number) => {
     setProcessing(true);
     try {
-      const response = await api.post('/provider/subscription/checkout');
+      const response = await api.post('/provider/subscription/checkout', { plan_id: planId });
+      toast.success('Redirecting to checkout...');
       window.location.href = response.data.checkout_url;
     } catch (error: any) {
       console.error('Failed to create checkout:', error);
-      alert('Failed to create checkout session. Please try again.');
+      const errorMessage = error.response?.data?.error 
+        || error.response?.data?.message 
+        || (error.response?.data?.errors ? JSON.stringify(error.response.data.errors) : null)
+        || 'Failed to create checkout session. Please try again.';
+      toast.error(errorMessage);
+      setProcessing(false);
+    }
+  };
+
+  const handleUpgrade = async (planId: number) => {
+    if (!confirm('Are you sure you want to upgrade to this plan? You will be charged a prorated amount.')) {
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      await api.post('/provider/subscription/upgrade', { plan_id: planId });
+      toast.success('Plan upgraded successfully!');
+      fetchData();
+    } catch (error: any) {
+      console.error('Failed to upgrade:', error);
+      toast.error(error.response?.data?.error || 'Failed to upgrade plan. Please try again.');
+    } finally {
       setProcessing(false);
     }
   };
@@ -77,11 +128,12 @@ function SubscriptionContent() {
   const handleBillingPortal = async () => {
     setProcessing(true);
     try {
-      const response = await api.get('/provider/subscription/billing-portal');
+      const response = await api.post('/provider/subscription/billing-portal');
+      toast.success('Opening billing portal...');
       window.location.href = response.data.portal_url;
     } catch (error: any) {
       console.error('Failed to open billing portal:', error);
-      alert('Failed to open billing portal. Please try again.');
+      toast.error('Failed to open billing portal. Please try again.');
       setProcessing(false);
     }
   };
@@ -105,93 +157,135 @@ function SubscriptionContent() {
   };
 
   if (loading) {
-    return <div className="p-8">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <ProviderNavigation />
+        <div className="p-8">Loading...</div>
+      </div>
+    );
   }
 
   const isActive = subscription?.status === 'active';
+  const currentPlanId = subscription?.subscription_plan_id;
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Link href="/provider/dashboard" className="text-gray-500 hover:text-gray-700">
-                ← Dashboard
-              </Link>
-              <Link href="/provider/profile" className="text-green-600 hover:text-green-700">
-                Profile
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <main className="max-w-4xl mx-auto py-12 sm:px-6 lg:px-8">
+      <ProviderNavigation />
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <div className="bg-white shadow rounded-lg p-8">
-            <h1 className="text-3xl font-bold mb-6">Subscription Plan</h1>
-            
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-4">Current Status</h2>
+          <h1 className="text-3xl font-bold mb-6">Subscription Plans</h1>
+          
+          {subscription && (
+            <div className="bg-white shadow rounded-lg p-6 mb-6">
+              <h2 className="text-xl font-semibold mb-4">Current Subscription</h2>
               <div className="flex items-center gap-4 mb-4">
-                {getStatusBadge(subscription?.status || null)}
-                {subscription?.current_period_end && (
+                {getStatusBadge(subscription.status)}
+                {subscription.current_plan && (
+                  <span className="text-gray-700 font-medium">
+                    {subscription.current_plan.name} - ${Number(subscription.current_plan.price).toFixed(2)}/{subscription.current_plan.interval}
+                  </span>
+                )}
+                {subscription.current_period_end && (
                   <span className="text-gray-600">
                     Renews: {new Date(subscription.current_period_end).toLocaleDateString()}
                   </span>
                 )}
               </div>
               
-              {!isActive && (
-                <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded mb-4">
-                  <p className="font-semibold">Account Inactive</p>
-                  <p className="text-sm mt-1">
-                    Please subscribe to a plan to access leads. Once subscribed, your account will be activated automatically.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="border-t pt-8">
-              <h2 className="text-xl font-semibold mb-4">Subscription Details</h2>
-              <div className="bg-gray-50 rounded-lg p-6 mb-6">
-                <h3 className="text-lg font-semibold mb-2">Lead Management Plan</h3>
-                <p className="text-gray-600 mb-4">
-                  Subscribe to access and manage your assigned leads. Your subscription will be activated automatically upon successful payment.
-                </p>
-                <ul className="list-disc list-inside space-y-2 text-gray-700 mb-4">
-                  <li>Access to all assigned leads</li>
-                  <li>Update lead status</li>
-                  <li>View lead details</li>
-                  <li>Filter and search leads</li>
-                </ul>
-              </div>
-
-              {!isActive ? (
+              {isActive && (
                 <button
-                  onClick={handleSubscribe}
+                  onClick={handleBillingPortal}
                   disabled={processing}
-                  className="w-full bg-indigo-600 text-white px-6 py-3 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 font-semibold"
+                  className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 disabled:opacity-50"
                 >
-                  {processing ? 'Processing...' : 'Subscribe Now'}
+                  {processing ? 'Loading...' : 'Manage Billing'}
                 </button>
-              ) : (
-                <div className="space-y-4">
-                  <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded">
-                    <p className="font-semibold">Your subscription is active!</p>
-                    <p className="text-sm mt-1">You can now access all your assigned leads.</p>
-                  </div>
-                  <button
-                    onClick={handleBillingPortal}
-                    disabled={processing}
-                    className="w-full bg-gray-600 text-white px-6 py-3 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50"
-                  >
-                    {processing ? 'Loading...' : 'Manage Billing'}
-                  </button>
-                </div>
               )}
             </div>
+          )}
+
+          {!isActive && (
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded mb-6">
+              <p className="font-semibold">Account Inactive</p>
+              <p className="text-sm mt-1">
+                Please subscribe to a plan to access leads. Once subscribed, your account will be activated automatically.
+              </p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {plans.map((plan) => {
+              const isCurrentPlan = currentPlanId === plan.id;
+              const currentPlan = plans.find(p => p.id === currentPlanId);
+              const planPrice = Number(plan.price);
+              const currentPrice = currentPlan ? Number(currentPlan.price) : 0;
+              const isUpgrade = isActive && currentPlanId && planPrice > currentPrice;
+              const isDowngrade = isActive && currentPlanId && planPrice < currentPrice;
+
+              return (
+                <div
+                  key={plan.id}
+                  className={`bg-white shadow rounded-lg p-6 ${
+                    isCurrentPlan ? 'ring-2 ring-indigo-500' : ''
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="text-xl font-bold">{plan.name}</h3>
+                    {isCurrentPlan && (
+                      <span className="px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-800 rounded">
+                        Current
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="mb-4">
+                    <span className="text-3xl font-bold">${Number(plan.price).toFixed(2)}</span>
+                    <span className="text-gray-600">/{plan.interval}</span>
+                  </div>
+
+                  {plan.trial_days > 0 && (
+                    <div className="mb-4">
+                      <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
+                        {plan.trial_days} day trial
+                      </span>
+                    </div>
+                  )}
+
+                  {plan.features && plan.features.length > 0 && (
+                    <ul className="list-disc list-inside space-y-2 text-sm text-gray-700 mb-6">
+                      {plan.features.map((feature, idx) => (
+                        <li key={idx}>{feature}</li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {isCurrentPlan ? (
+                    <button
+                      disabled
+                      className="w-full bg-gray-200 text-gray-600 px-4 py-2 rounded-md cursor-not-allowed"
+                    >
+                      Current Plan
+                    </button>
+                  ) : isActive ? (
+                    <button
+                      onClick={() => handleUpgrade(plan.id)}
+                      disabled={processing}
+                      className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 disabled:opacity-50"
+                    >
+                      {processing ? 'Processing...' : isUpgrade ? 'Upgrade' : 'Switch Plan'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleSubscribe(plan.id)}
+                      disabled={processing}
+                      className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 disabled:opacity-50"
+                    >
+                      {processing ? 'Processing...' : 'Subscribe'}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </main>
@@ -201,9 +295,8 @@ function SubscriptionContent() {
 
 export default function ProviderSubscriptionPage() {
   return (
-    <Suspense fallback={<div className="p-8">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-gray-50"><ProviderNavigation /><div className="p-8">Loading...</div></div>}>
       <SubscriptionContent />
     </Suspense>
   );
 }
-

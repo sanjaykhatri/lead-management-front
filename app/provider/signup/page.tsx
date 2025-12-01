@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 import api from '@/lib/api';
 
 export default function ProviderSignupPage() {
@@ -15,7 +16,6 @@ export default function ProviderSignupPage() {
     password: '',
     confirmPassword: '',
   });
-  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -24,15 +24,14 @@ export default function ProviderSignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      toast.error('Passwords do not match');
       return;
     }
 
     if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
+      toast.error('Password must be at least 6 characters');
       return;
     }
 
@@ -48,11 +47,13 @@ export default function ProviderSignupPage() {
       });
       
       localStorage.setItem('token', response.data.token);
+      toast.success('Account created successfully!');
       router.push('/provider/subscription');
     } catch (err: any) {
-      setError(err.response?.data?.errors 
+      const errorMessage = err.response?.data?.errors 
         ? Object.values(err.response.data.errors).flat().join(', ')
-        : err.response?.data?.message || 'Signup failed. Please try again.');
+        : err.response?.data?.message || 'Signup failed. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -73,11 +74,6 @@ export default function ProviderSignupPage() {
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
           <div className="rounded-md shadow-sm space-y-4">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">

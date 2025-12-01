@@ -55,6 +55,16 @@ export default function LeadDetailPage() {
     fetchLead();
     fetchProviders();
     fetchNotes();
+
+    // Listen for real-time note updates
+    const handleNoteCreated = () => {
+      fetchNotes();
+    };
+
+    window.addEventListener('leadNoteCreated', handleNoteCreated);
+    return () => {
+      window.removeEventListener('leadNoteCreated', handleNoteCreated);
+    };
   }, []);
 
   const checkAuth = () => {

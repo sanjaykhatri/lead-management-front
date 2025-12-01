@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 import api from '@/lib/api';
+import ProviderNavigation from '@/components/ProviderNavigation';
 
 interface Lead {
   id: number;
@@ -20,6 +22,15 @@ interface Lead {
   service_provider: { id: number; name: string } | null;
 }
 
+interface LeadNote {
+  id: number;
+  note: string;
+  type: string;
+  created_at: string;
+  user: { name: string } | null;
+  service_provider: { name: string } | null;
+}
+
 export default function ProviderLeadDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -29,11 +40,26 @@ export default function ProviderLeadDetailPage() {
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState('');
   const [saving, setSaving] = useState(false);
+  const [notes, setNotes] = useState<LeadNote[]>([]);
+  const [newNote, setNewNote] = useState('');
+  const [loadingNotes, setLoadingNotes] = useState(false);
+  const [addingNote, setAddingNote] = useState(false);
 
   useEffect(() => {
     document.title = 'Lead Details - Provider';
     checkAuth();
     fetchLead();
+    fetchNotes();
+
+    // Listen for real-time note updates
+    const handleNoteCreated = () => {
+      fetchNotes();
+    };
+
+    window.addEventListener('leadNoteCreated', handleNoteCreated);
+    return () => {
+      window.removeEventListener('leadNoteCreated', handleNoteCreated);
+    };
   }, []);
 
   const checkAuth = () => {
@@ -65,21 +91,55 @@ export default function ProviderLeadDetailPage() {
     }
   };
 
+  const fetchNotes = async () => {
+    setLoadingNotes(true);
+    try {
+      const response = await api.get(`/provider/leads/${leadId}/notes`);
+      setNotes(response.data);
+    } catch (error) {
+      console.error('Failed to fetch notes:', error);
+    } finally {
+      setLoadingNotes(false);
+    }
+  };
+
   const handleStatusUpdate = async () => {
     setSaving(true);
     try {
       await api.put(`/provider/leads/${leadId}`, { status });
       await fetchLead();
-      alert('Status updated successfully');
+      await fetchNotes(); // Refresh notes to see status change note
+      toast.success('Status updated successfully');
     } catch (error: any) {
       if (error.response?.status === 403) {
-        alert('You do not have access to this lead');
+        toast.error('You do not have access to this lead');
       } else {
         console.error('Failed to update status:', error);
-        alert('Failed to update status');
+        toast.error(error.response?.data?.message || 'Failed to update status');
       }
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAddNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNote.trim()) {
+      toast.error('Please enter a note');
+      return;
+    }
+
+    setAddingNote(true);
+    try {
+      await api.post(`/provider/leads/${leadId}/notes`, { note: newNote });
+      setNewNote('');
+      await fetchNotes();
+      toast.success('Note added successfully');
+    } catch (error: any) {
+      console.error('Failed to add note:', error);
+      toast.error(error.response?.data?.message || 'Failed to add note');
+    } finally {
+      setAddingNote(false);
     }
   };
 
@@ -93,18 +153,7 @@ export default function ProviderLeadDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link href="/provider/dashboard" className="text-gray-500 hover:text-gray-700">
-                ← Back to Leads
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
+      <ProviderNavigation />
       <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="bg-white shadow rounded-lg p-6 mb-6">
@@ -169,6 +218,57 @@ export default function ProviderLeadDetailPage() {
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Notes Section */}
+          <div className="bg-white shadow rounded-lg p-6 mt-6">
+            <h2 className="text-xl font-bold mb-4">Notes & History</h2>
+            
+            <form onSubmit={handleAddNote} className="mb-6">
+              <textarea
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                placeholder="Add a note..."
+                className="w-full border border-gray-300 rounded-md px-3 py-2 mb-2"
+                rows={3}
+              />
+              <button
+                type="submit"
+                disabled={addingNote || !newNote.trim()}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {addingNote ? 'Adding...' : 'Add Note'}
+              </button>
+            </form>
+
+            <div className="space-y-4">
+              {loadingNotes ? (
+                <p className="text-gray-500">Loading notes...</p>
+              ) : notes.length === 0 ? (
+                <p className="text-gray-500">No notes yet</p>
+              ) : (
+                notes.map((note) => (
+                  <div key={note.id} className="border-l-4 border-indigo-500 pl-4 py-2">
+                    <div className="flex justify-between items-start mb-1">
+                      <div>
+                        <p className="text-sm text-gray-600">
+                          {note.user?.name || note.service_provider?.name || 'System'}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {new Date(note.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                      {note.type !== 'note' && (
+                        <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                          {note.type}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-gray-900">{note.note}</p>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

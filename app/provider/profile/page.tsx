@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 import api from '@/lib/api';
+import ProviderNavigation from '@/components/ProviderNavigation';
 
 interface Provider {
   id: number;
@@ -19,8 +21,6 @@ export default function ProviderProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'profile' | 'password'>('profile');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   
   const [profileData, setProfileData] = useState({
     name: '',
@@ -74,20 +74,17 @@ export default function ProviderProfilePage() {
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
     setSaving(true);
 
     try {
       await api.put('/provider/profile', profileData);
-      setSuccess('Profile updated successfully');
       await fetchProfile();
+      toast.success('Profile updated successfully');
     } catch (error: any) {
-      setError(
-        error.response?.data?.errors
-          ? Object.values(error.response.data.errors).flat().join(', ')
-          : error.response?.data?.message || 'Failed to update profile'
-      );
+      const errorMessage = error.response?.data?.errors
+        ? Object.values(error.response.data.errors).flat().join(', ')
+        : error.response?.data?.message || 'Failed to update profile';
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -95,11 +92,9 @@ export default function ProviderProfilePage() {
 
   const handlePasswordUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
 
     if (passwordData.new_password !== passwordData.new_password_confirmation) {
-      setError('New passwords do not match');
+      toast.error('New passwords do not match');
       return;
     }
 
@@ -107,18 +102,17 @@ export default function ProviderProfilePage() {
 
     try {
       await api.put('/provider/password', passwordData);
-      setSuccess('Password updated successfully');
       setPasswordData({
         current_password: '',
         new_password: '',
         new_password_confirmation: '',
       });
+      toast.success('Password updated successfully');
     } catch (error: any) {
-      setError(
-        error.response?.data?.errors
-          ? Object.values(error.response.data.errors).flat().join(', ')
-          : error.response?.data?.message || 'Failed to update password'
-      );
+      const errorMessage = error.response?.data?.errors
+        ? Object.values(error.response.data.errors).flat().join(', ')
+        : error.response?.data?.message || 'Failed to update password';
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -130,17 +124,7 @@ export default function ProviderProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link href="/provider/dashboard" className="text-gray-500 hover:text-gray-700">
-                ← Back to Dashboard
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <ProviderNavigation />
 
       <main className="max-w-4xl mx-auto py-12 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
@@ -171,17 +155,6 @@ export default function ProviderProfilePage() {
             </div>
 
             <div className="p-8">
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-                  {error}
-                </div>
-              )}
-              {success && (
-                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
-                  {success}
-                </div>
-              )}
-
               {activeTab === 'profile' ? (
                 <form onSubmit={handleProfileUpdate} className="space-y-6">
                   <div>

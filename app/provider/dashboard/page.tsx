@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 import api from '@/lib/api';
-import ProviderNotificationsBell from '@/components/ProviderNotificationsBell';
+import ProviderNavigation from '@/components/ProviderNavigation';
 import {
   DndContext,
   DragEndEvent,
@@ -202,13 +203,15 @@ export default function ProviderDashboard() {
       } else if (error.response?.status === 403) {
         // Check if account is inactive or subscription is inactive
         if (error.response?.data?.account_inactive) {
-          alert('Your account has been deactivated. Please contact admin to activate your account.');
+          toast.error('Your account has been deactivated. Please contact admin to activate your account.');
         } else {
           // Subscription not active
+          toast.error('Please subscribe to a plan to access leads.');
           router.push('/provider/subscription');
         }
       } else {
         console.error('Failed to fetch leads:', error);
+        toast.error('Failed to fetch leads. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -283,36 +286,7 @@ export default function ProviderDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-bold text-gray-900">My Leads</h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <ProviderNotificationsBell />
-              <Link
-                href="/provider/profile"
-                className="text-green-600 hover:text-green-700 px-3 py-2 text-sm font-medium"
-              >
-                Profile
-              </Link>
-              <Link
-                href="/provider/subscription"
-                className="text-indigo-600 hover:text-indigo-700 px-3 py-2 text-sm font-medium"
-              >
-                Subscription
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <ProviderNavigation />
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">

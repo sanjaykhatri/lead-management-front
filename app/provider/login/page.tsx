@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 import api from '@/lib/api';
 
 export default function ProviderLoginPage() {
@@ -11,7 +12,6 @@ export default function ProviderLoginPage() {
     email: '',
     password: '',
   });
-  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -20,12 +20,12 @@ export default function ProviderLoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setIsLoading(true);
 
     try {
       const response = await api.post('/provider/login', formData);
       localStorage.setItem('token', response.data.token);
+      toast.success('Login successful!');
       
       // Check subscription status
       if (!response.data.has_active_subscription) {
@@ -34,12 +34,12 @@ export default function ProviderLoginPage() {
         router.push('/provider/dashboard');
       }
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Login failed. Please try again.';
-      setError(errorMessage);
-      
       // Show specific message for inactive accounts
       if (err.response?.data?.account_inactive) {
-        setError('Your account has been deactivated. Please contact admin to activate your account.');
+        toast.error('Your account has been deactivated. Please contact admin to activate your account.');
+      } else {
+        const errorMessage = err.response?.data?.message || 'Login failed. Please try again.';
+        toast.error(errorMessage);
       }
     } finally {
       setIsLoading(false);
@@ -61,11 +61,6 @@ export default function ProviderLoginPage() {
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <label htmlFor="email" className="sr-only">
