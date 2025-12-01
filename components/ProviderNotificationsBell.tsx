@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { usePusherNotifications } from '@/hooks/usePusher';
+import { BellIcon, DocumentTextIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
 
 interface Notification {
   id: string;
@@ -39,7 +40,7 @@ export default function ProviderNotificationsBell() {
     
     // Show toast notification
     toast.success(message, {
-      icon: '🔔',
+      icon: <BellIcon className="h-5 w-5 text-white" />,
       duration: 4000,
     });
 
@@ -64,11 +65,19 @@ export default function ProviderNotificationsBell() {
   }, []);
 
   const handleStatusUpdated = useCallback((data: any) => {
-    const message = data.message || `Lead '${data.lead.name}' status changed from ${data.lead.old_status || 'N/A'} to ${data.lead.status}`;
+    // Check if this was updated by admin (we can infer from the event structure)
+    const isAdminUpdate = data.updated_by === 'admin' || data.user_type === 'admin' || !data.service_provider_id;
+    const statusMessage = data.lead.old_status 
+      ? `from ${data.lead.old_status} to ${data.lead.status}`
+      : `to ${data.lead.status}`;
+    
+    const message = isAdminUpdate 
+      ? `Admin updated lead '${data.lead.name}' status ${statusMessage}`
+      : data.message || `Lead '${data.lead.name}' status changed ${statusMessage}`;
     
     // Show toast notification
     toast.success(message, {
-      icon: '📝',
+      icon: <DocumentTextIcon className="h-5 w-5 text-white" />,
       duration: 4000,
     });
 
@@ -94,11 +103,17 @@ export default function ProviderNotificationsBell() {
 
   // Handle real-time notifications - Note Created
   const handleNoteCreated = useCallback((data: any) => {
-    const message = data.message || `New note added to lead '${data.lead.name}' by ${data.note.created_by || 'Someone'}`;
+    // Check if note was created by admin
+    const isAdminNote = data.note.created_by_type === 'admin' || data.note.user_id;
+    const createdBy = data.note.created_by || 'Admin';
+    
+    const message = isAdminNote
+      ? `Admin added a note to lead '${data.lead.name}': ${data.note.note?.substring(0, 50)}${data.note.note?.length > 50 ? '...' : ''}`
+      : data.message || `New note added to lead '${data.lead.name}' by ${createdBy}`;
     
     // Show toast notification
     toast.success(message, {
-      icon: '💬',
+      icon: <ChatBubbleLeftIcon className="h-5 w-5 text-white" />,
       duration: 4000,
     });
 
