@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
+import { Alert, Box, Button, Card, CardContent, Typography, TextField } from '@mui/material';
 
 export default function ProviderLoginPage() {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function ProviderLoginPage() {
     email: '',
     password: '',
   });
+  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -20,6 +22,7 @@ export default function ProviderLoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     setIsLoading(true);
 
     try {
@@ -36,9 +39,11 @@ export default function ProviderLoginPage() {
     } catch (err: any) {
       // Show specific message for inactive accounts
       if (err.response?.data?.account_inactive) {
+        setError('Your account has been deactivated. Please contact admin to activate your account.');
         toast.error('Your account has been deactivated. Please contact admin to activate your account.');
       } else {
         const errorMessage = err.response?.data?.message || 'Login failed. Please try again.';
+        setError(errorMessage);
         toast.error(errorMessage);
       }
     } finally {
@@ -47,65 +52,46 @@ export default function ProviderLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Provider Login
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Don't have an account?{' '}
-            <Link href="/provider/signup" className="font-medium text-indigo-600 hover:text-indigo-500">
-              Sign up
-            </Link>
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email" className="sr-only">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-              />
-            </div>
-          </div>
+    <Box sx={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', px: 4, py: 10 }}>
+      <Card sx={{ width: '100%', maxWidth: 520 }}>
+        <CardContent sx={{ p: { xs: 6, md: 8 } }}>
+          <Typography variant='h4'>Provider sign in</Typography>
+          <Typography color='text.secondary' sx={{ mt: 1 }}>
+            Don&apos;t have an account? <Link href='/provider/signup'>Sign up</Link>
+          </Typography>
 
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-            >
-              {isLoading ? 'Signing in...' : 'Sign in'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+          {error && (
+            <Alert severity='error' sx={{ mt: 4 }}>
+              {error}
+            </Alert>
+          )}
+
+          <Box component='form' onSubmit={handleSubmit} sx={{ mt: 4, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <TextField
+              label='Email'
+              type='email'
+              required
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
+            <TextField
+              label='Password'
+              type='password'
+              required
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            />
+            <Button type='submit' variant='contained' disabled={isLoading} size='large'>
+              {isLoading ? 'Signing in…' : 'Sign in'}
+            </Button>
+          </Box>
+
+          <Typography color='text.secondary' sx={{ mt: 4 }}>
+            <Link href='/provider/forgot-password'>Forgot password?</Link>
+          </Typography>
+        </CardContent>
+      </Card>
+    </Box>
   );
 }
 

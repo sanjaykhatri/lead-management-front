@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
-import ProviderNavigation from '@/components/ProviderNavigation';
+import FullPageLoader from '@/components/common/FullPageLoader';
+import { Box } from '@mui/material';
 import {
   DndContext,
   DragEndEvent,
@@ -281,14 +282,11 @@ export default function ProviderDashboard() {
   };
 
   if (loading) {
-    return <div className="p-8">Loading...</div>;
+    return <FullPageLoader />;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <ProviderNavigation />
-
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div className="px-4 py-6 sm:px-0">
           {subscription && subscription.status === 'active' && (
             <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded mb-4">
@@ -434,8 +432,7 @@ export default function ProviderDashboard() {
           </div>
           )}
         </div>
-      </main>
-    </div>
+    </Box>
   );
 }
 

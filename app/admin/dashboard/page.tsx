@@ -4,7 +4,25 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
-import AdminNavigation from '@/components/AdminNavigation';
+import FullPageLoader from '@/components/common/FullPageLoader';
+import {
+  Box,
+  Card,
+  CardContent,
+  CardHeader,
+  Chip,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography
+} from '@mui/material';
 
 interface Lead {
   id: number;
@@ -117,100 +135,103 @@ export default function AdminDashboard() {
   }, [filters]);
 
   if (loading) {
-    return <div className="p-8">Loading...</div>;
+    return <FullPageLoader />;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminNavigation />
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <Box>
+        <Typography variant='h4'>Leads</Typography>
+        <Typography color='text.secondary'>Review and manage incoming leads.</Typography>
+      </Box>
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="bg-white shadow rounded-lg p-6 mb-6">
-            <h2 className="text-lg font-semibold mb-4">Filters</h2>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select
-                  value={filters.status}
-                  onChange={(e) => handleFilterChange('status', e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
-                >
-                  <option value="">All</option>
-                  <option value="new">New</option>
-                  <option value="contacted">Contacted</option>
-                  <option value="closed">Closed</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date From</label>
-                <input
-                  type="date"
-                  value={filters.date_from}
-                  onChange={(e) => handleFilterChange('date_from', e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date To</label>
-                <input
-                  type="date"
-                  value={filters.date_to}
-                  onChange={(e) => handleFilterChange('date_to', e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
-                />
-              </div>
-            </div>
-          </div>
+      <Card>
+        <CardHeader title='Filters' />
+        <CardContent>
+          <Box sx={{ display: 'grid', gap: 4, gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' } }}>
+            <FormControl size='small' fullWidth>
+              <InputLabel id='lead-status-label'>Status</InputLabel>
+              <Select
+                labelId='lead-status-label'
+                label='Status'
+                value={filters.status}
+                onChange={(e) => handleFilterChange('status', String(e.target.value))}
+              >
+                <MenuItem value=''>All</MenuItem>
+                <MenuItem value='new'>New</MenuItem>
+                <MenuItem value='contacted'>Contacted</MenuItem>
+                <MenuItem value='closed'>Closed</MenuItem>
+              </Select>
+            </FormControl>
 
-          <div className="bg-white shadow rounded-lg overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Provider</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {leads.map((lead) => (
-                  <tr key={lead.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{lead.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <div>{lead.email}</div>
-                      <div>{lead.phone}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lead.location?.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{lead.service_provider?.name || 'Unassigned'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        lead.status === 'new' ? 'bg-yellow-100 text-yellow-800' :
-                        lead.status === 'contacted' ? 'bg-blue-100 text-blue-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
-                        {lead.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(lead.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <Link href={`/admin/leads/${lead.id}`} className="text-indigo-600 hover:text-indigo-900">
-                        View
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </main>
-    </div>
+            <TextField
+              size='small'
+              label='Date from'
+              type='date'
+              value={filters.date_from}
+              onChange={(e) => handleFilterChange('date_from', e.target.value)}
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              size='small'
+              label='Date to'
+              type='date'
+              value={filters.date_to}
+              onChange={(e) => handleFilterChange('date_to', e.target.value)}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Box>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader title='Results' />
+        <CardContent sx={{ p: 0 }}>
+          <Table size='small'>
+            <TableHead>
+              <TableRow>
+                <TableCell>Name</TableCell>
+                <TableCell>Contact</TableCell>
+                <TableCell>Location</TableCell>
+                <TableCell>Provider</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Date</TableCell>
+                <TableCell>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {leads.map((lead) => (
+                <TableRow key={lead.id} hover>
+                  <TableCell>
+                    <Typography fontWeight={600}>{lead.name}</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant='body2'>{lead.email}</Typography>
+                    <Typography variant='body2' color='text.secondary'>
+                      {lead.phone}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>{lead.location?.name}</TableCell>
+                  <TableCell>{lead.service_provider?.name || 'Unassigned'}</TableCell>
+                  <TableCell>
+                    <Chip
+                      size='small'
+                      label={lead.status}
+                      color={lead.status === 'new' ? 'warning' : lead.status === 'contacted' ? 'info' : 'success'}
+                      variant='outlined'
+                    />
+                  </TableCell>
+                  <TableCell>{new Date(lead.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <Link href={`/admin/leads/${lead.id}`}>View</Link>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </Box>
   );
 }
 

@@ -3,7 +3,22 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import AdminNavigation from '@/components/AdminNavigation';
+import FullPageLoader from '@/components/common/FullPageLoader';
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  Chip,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography
+} from '@mui/material';
 
 interface AnalyticsData {
   summary: {
@@ -80,157 +95,144 @@ export default function AnalyticsPage() {
   };
 
   if (loading) {
-    return <div className="p-8">Loading...</div>;
+    return <FullPageLoader />;
   }
 
   if (!analytics) {
-    return <div className="p-8">No data available</div>;
+    return (
+      <Box sx={{ py: 6 }}>
+        <Typography color='text.secondary'>No data available.</Typography>
+      </Box>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminNavigation />
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <Box>
+        <Typography variant='h4'>Analytics</Typography>
+        <Typography color='text.secondary'>
+          Date range: {analytics.date_range.from} → {analytics.date_range.to}
+        </Typography>
+      </Box>
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          {/* Date Range Filter */}
-          <div className="bg-white shadow rounded-lg p-6 mb-6">
-            <h2 className="text-lg font-semibold mb-4">Date Range</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
-                <input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
-                <input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
-                />
-              </div>
-              <div className="flex items-end">
-                <button
-                  onClick={fetchAnalytics}
-                  className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
-                >
-                  Update
-                </button>
-              </div>
-            </div>
-          </div>
+      <Card>
+        <CardHeader title='Date range' />
+        <CardContent>
+          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' } }}>
+            <TextField
+              size='small'
+              label='From'
+              type='date'
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              size='small'
+              label='To'
+              type='date'
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+            />
+            <Button variant='contained' onClick={fetchAnalytics}>
+              Refresh
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
 
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-            <div className="bg-white shadow rounded-lg p-6">
-              <h3 className="text-sm font-medium text-gray-500">Total Leads</h3>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{analytics.summary.total_leads}</p>
-            </div>
-            <div className="bg-white shadow rounded-lg p-6">
-              <h3 className="text-sm font-medium text-gray-500">New</h3>
-              <p className="text-3xl font-bold text-yellow-600 mt-2">{analytics.summary.new_leads}</p>
-            </div>
-            <div className="bg-white shadow rounded-lg p-6">
-              <h3 className="text-sm font-medium text-gray-500">Contacted</h3>
-              <p className="text-3xl font-bold text-blue-600 mt-2">{analytics.summary.contacted_leads}</p>
-            </div>
-            <div className="bg-white shadow rounded-lg p-6">
-              <h3 className="text-sm font-medium text-gray-500">Closed</h3>
-              <p className="text-3xl font-bold text-green-600 mt-2">{analytics.summary.closed_leads}</p>
-            </div>
-            <div className="bg-white shadow rounded-lg p-6">
-              <h3 className="text-sm font-medium text-gray-500">Conversion Rate</h3>
-              <p className="text-3xl font-bold text-indigo-600 mt-2">{analytics.summary.conversion_rate}%</p>
-            </div>
-          </div>
+      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: 'repeat(5, 1fr)' } }}>
+        <Card><CardContent><Typography color='text.secondary'>Total</Typography><Typography variant='h3'>{analytics.summary.total_leads}</Typography></CardContent></Card>
+        <Card><CardContent><Typography color='text.secondary'>New</Typography><Typography variant='h3' color='warning.main'>{analytics.summary.new_leads}</Typography></CardContent></Card>
+        <Card><CardContent><Typography color='text.secondary'>Contacted</Typography><Typography variant='h3' color='info.main'>{analytics.summary.contacted_leads}</Typography></CardContent></Card>
+        <Card><CardContent><Typography color='text.secondary'>Closed</Typography><Typography variant='h3' color='success.main'>{analytics.summary.closed_leads}</Typography></CardContent></Card>
+        <Card><CardContent><Typography color='text.secondary'>Conversion</Typography><Typography variant='h3' color='primary.main'>{analytics.summary.conversion_rate}%</Typography></CardContent></Card>
+      </Box>
 
-          {/* Leads by Location */}
-          <div className="bg-white shadow rounded-lg p-6 mb-6">
-            <h2 className="text-lg font-semibold mb-4">Leads by Location</h2>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Leads</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {analytics.leads_by_location.map((location) => (
-                    <tr key={location.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{location.name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{location.leads_count}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+      <Card>
+        <CardHeader title='Leads by location' />
+        <CardContent sx={{ p: 0 }}>
+          <Table size='small'>
+            <TableHead>
+              <TableRow>
+                <TableCell>Location</TableCell>
+                <TableCell>Total</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {analytics.leads_by_location.map((location) => (
+                <TableRow key={location.id} hover>
+                  <TableCell><Typography fontWeight={600}>{location.name}</Typography></TableCell>
+                  <TableCell>{location.leads_count}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-          {/* Provider Performance */}
-          <div className="bg-white shadow rounded-lg p-6 mb-6">
-            <h2 className="text-lg font-semibold mb-4">Provider Performance</h2>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Provider</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Leads</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Closed</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Conversion Rate</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {analytics.provider_performance.map((provider) => (
-                    <tr key={provider.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{provider.name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{provider.total_leads}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{provider.closed_leads}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{provider.conversion_rate}%</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+      <Card>
+        <CardHeader title='Provider performance' />
+        <CardContent sx={{ p: 0 }}>
+          <Table size='small'>
+            <TableHead>
+              <TableRow>
+                <TableCell>Provider</TableCell>
+                <TableCell>Total</TableCell>
+                <TableCell>Closed</TableCell>
+                <TableCell>Conversion</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {analytics.provider_performance.map((provider) => (
+                <TableRow key={provider.id} hover>
+                  <TableCell><Typography fontWeight={600}>{provider.name}</Typography></TableCell>
+                  <TableCell>{provider.total_leads}</TableCell>
+                  <TableCell>{provider.closed_leads}</TableCell>
+                  <TableCell>
+                    <Chip
+                      size='small'
+                      label={`${provider.conversion_rate}%`}
+                      color={provider.conversion_rate >= 50 ? 'success' : 'default'}
+                      variant='outlined'
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-          {/* Daily Status Chart */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-lg font-semibold mb-4">Daily Leads Trend</h2>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">New</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contacted</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Closed</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {analytics.leads_by_status_daily.map((day, index) => (
-                    <tr key={index}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{day.date}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{day.total}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-yellow-600">{day.new}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600">{day.contacted}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">{day.closed}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </main>
-    </div>
+      <Card>
+        <CardHeader title='Daily trend' />
+        <CardContent sx={{ p: 0 }}>
+          <Table size='small'>
+            <TableHead>
+              <TableRow>
+                <TableCell>Date</TableCell>
+                <TableCell>Total</TableCell>
+                <TableCell>New</TableCell>
+                <TableCell>Contacted</TableCell>
+                <TableCell>Closed</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {analytics.leads_by_status_daily.map((day, index) => (
+                <TableRow key={index} hover>
+                  <TableCell>{day.date}</TableCell>
+                  <TableCell>{day.total}</TableCell>
+                  <TableCell sx={{ color: 'warning.main' }}>{day.new}</TableCell>
+                  <TableCell sx={{ color: 'info.main' }}>{day.contacted}</TableCell>
+                  <TableCell sx={{ color: 'success.main' }}>{day.closed}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </Box>
   );
 }
 

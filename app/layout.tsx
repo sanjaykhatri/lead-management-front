@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
+import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
+import 'react-perfect-scrollbar/dist/css/styles.css';
 import "./globals.css";
+import "@/assets/iconify-icons/generated-icons.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,11 +27,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html id="__next" lang="en" dir="ltr" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        suppressHydrationWarning
+        className={`${geistSans.variable} ${geistMono.variable} antialiased flex is-full min-bs-full flex-auto flex-col`}
       >
+        <InitColorSchemeScript attribute="data" defaultMode="system" />
         {children}
         <Toaster
           position="top-right"

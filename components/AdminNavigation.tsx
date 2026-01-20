@@ -3,7 +3,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { ArrowDownTrayIcon, ArrowRightOnRectangleIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import NotificationsBell from './NotificationsBell';
+import { Button } from '@/components/ui/Button';
+import { cn } from '@/lib/cn';
 
 export default function AdminNavigation() {
   const pathname = usePathname();
@@ -47,71 +50,78 @@ export default function AdminNavigation() {
     <>
       <Link
         href="/admin/dashboard"
-        className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+        className={cn(
+          'inline-flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors',
           isActive('/admin/dashboard')
-            ? 'border-indigo-500 text-gray-900'
-            : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-        }`}
+            ? 'bg-indigo-50 text-indigo-700'
+            : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+        )}
       >
-        Leads
+        Dashboard
       </Link>
       <Link
         href="/admin/service-providers"
-        className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+        className={cn(
+          'inline-flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors',
           isActive('/admin/service-providers')
-            ? 'border-indigo-500 text-gray-900'
-            : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-        }`}
+            ? 'bg-indigo-50 text-indigo-700'
+            : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+        )}
       >
         Service Providers
       </Link>
       <Link
         href="/admin/locations"
-        className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+        className={cn(
+          'inline-flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors',
           isActive('/admin/locations')
-            ? 'border-indigo-500 text-gray-900'
-            : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-        }`}
+            ? 'bg-indigo-50 text-indigo-700'
+            : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+        )}
       >
         Locations
       </Link>
       <Link
         href="/admin/plans"
-        className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+        className={cn(
+          'inline-flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors',
           isActive('/admin/plans')
-            ? 'border-indigo-500 text-gray-900'
-            : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-        }`}
+            ? 'bg-indigo-50 text-indigo-700'
+            : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+        )}
       >
         Plans
       </Link>
       <Link
         href="/admin/analytics"
-        className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+        className={cn(
+          'inline-flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors',
           isActive('/admin/analytics')
-            ? 'border-indigo-500 text-gray-900'
-            : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-        }`}
+            ? 'bg-indigo-50 text-indigo-700'
+            : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+        )}
       >
         Analytics
       </Link>
       <Link
         href="/admin/users"
-        className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+        className={cn(
+          'inline-flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors',
           isActive('/admin/users')
-            ? 'border-indigo-500 text-gray-900'
-            : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-        }`}
+            ? 'bg-indigo-50 text-indigo-700'
+            : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+        )}
       >
         Users
       </Link>
       <Link
         href="/admin/settings"
-        className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+        className={cn(
+          'inline-flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors',
           isActive('/admin/settings')
-            ? 'border-indigo-500 text-gray-900'
-            : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-        }`}
+            ? 'bg-indigo-50 text-indigo-700'
+            : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+        )}
       >
         Settings
       </Link>
@@ -119,91 +129,81 @@ export default function AdminNavigation() {
   );
 
   return (
-    <nav className="bg-white shadow">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <h1 className="text-lg sm:text-xl font-bold text-gray-900 whitespace-nowrap">
-              Admin Dashboard
-            </h1>
+    <nav className="sticky top-0 z-40 border-b border-gray-200 bg-white/80 backdrop-blur">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white">
+              <span className="text-sm font-semibold">LM</span>
+            </div>
+            <div className="leading-tight">
+              <div className="text-sm font-semibold text-gray-900">Admin</div>
+              <div className="text-xs text-gray-500">Lead Management</div>
+            </div>
           </div>
 
           {/* Desktop actions */}
-          <div className="hidden sm:flex items-center gap-4">
+          <div className="hidden sm:flex items-center gap-2">
             <NotificationsBell />
-            <button
+            <Button
               onClick={handleExportCsv}
-              className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 text-sm font-medium"
+              variant="outline"
+              size="sm"
             >
+              <ArrowDownTrayIcon className="h-4 w-4" />
               Export CSV
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleLogout}
-              className="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium"
+              variant="ghost"
+              size="sm"
             >
+              <ArrowRightOnRectangleIcon className="h-4 w-4" />
               Logout
-            </button>
+            </Button>
           </div>
 
           {/* Mobile burger */}
           <div className="flex items-center sm:hidden">
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+              className="inline-flex items-center justify-center rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
               aria-expanded={mobileOpen}
               aria-label="Toggle navigation menu"
             >
-              <svg
-                className="h-6 w-6"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                {mobileOpen ? (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                ) : (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                )}
-              </svg>
+              {mobileOpen ? <XMarkIcon className="h-6 w-6" /> : <Bars3Icon className="h-6 w-6" />}
             </button>
           </div>
         </div>
 
         {/* Desktop nav links */}
-        <div className="hidden sm:flex sm:space-x-8 h-10 items-end">
+        <div className="hidden sm:flex items-center gap-1 pb-3">
           {navLinks}
         </div>
 
         {/* Mobile dropdown menu */}
         {mobileOpen && (
           <div className="sm:hidden border-t border-gray-200 pb-3">
-            <div className="pt-2 flex flex-col space-y-1">
+            <div className="pt-2 flex flex-col gap-1">
               {navLinks}
             </div>
-            <div className="mt-3 flex flex-col space-y-2 border-t border-gray-100 pt-3">
-              <button
+            <div className="mt-3 flex flex-col gap-2 border-t border-gray-100 pt-3">
+              <Button
                 onClick={handleExportCsv}
-                className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 text-sm font-medium text-left"
+                variant="outline"
+                className="w-full justify-start"
               >
+                <ArrowDownTrayIcon className="h-4 w-4" />
                 Export CSV
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleLogout}
-                className="w-full text-gray-700 px-4 py-2 text-sm font-medium text-left hover:bg-gray-100 rounded-md"
+                variant="ghost"
+                className="w-full justify-start"
               >
+                <ArrowRightOnRectangleIcon className="h-4 w-4" />
                 Logout
-              </button>
+              </Button>
             </div>
           </div>
         )}

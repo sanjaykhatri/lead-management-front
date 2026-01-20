@@ -2,8 +2,31 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import api from '@/lib/api';
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography
+} from '@mui/material';
+import FullPageLoader from '@/components/common/FullPageLoader';
 
 interface Location {
   id: number;
@@ -123,215 +146,168 @@ export default function LocationsPage() {
   };
 
   if (loading) {
-    return <div className="p-8">Loading...</div>;
+    return <FullPageLoader />;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex">
-              <div className="flex-shrink-0 flex items-center">
-                <h1 className="text-xl font-bold text-gray-900">Locations</h1>
-              </div>
-              <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                <Link href="/admin/dashboard" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                  Leads
-                </Link>
-                <Link href="/admin/service-providers" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                  Service Providers
-                </Link>
-                <Link href="/admin/locations" className="border-indigo-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                  Locations
-                </Link>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <button
-                onClick={() => {
-                  setEditingLocation(null);
-                  setFormData({ name: '', slug: '', address: '', assignment_algorithm: 'round_robin' });
-                  setShowModal(true);
-                }}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
-              >
-                Add Location
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 2 }}>
+        <Box>
+          <Typography variant='h4'>Locations</Typography>
+          <Typography color='text.secondary'>Manage locations and provider assignments.</Typography>
+        </Box>
+        <Button
+          variant='contained'
+          onClick={() => {
+            setEditingLocation(null);
+            setFormData({ name: '', slug: '', address: '', assignment_algorithm: 'round_robin' });
+            setShowModal(true);
+          }}
+        >
+          Add location
+        </Button>
+      </Box>
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="bg-white shadow rounded-lg overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Slug</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Address</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Algorithm</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Providers</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {locations.map((location) => (
-                  <tr key={location.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{location.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{location.slug}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{location.address || '-'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 capitalize">
-                        {(location as any).assignment_algorithm || 'round_robin'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {location.service_providers.length > 0
-                        ? location.service_providers.map(p => p.name).join(', ')
-                        : 'No providers assigned'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      <button
-                        onClick={() => openEditModal(location)}
-                        className="text-indigo-600 hover:text-indigo-900"
-                      >
+      <Card>
+        <CardHeader title='Locations' />
+        <CardContent sx={{ p: 0 }}>
+          <Table size='small'>
+            <TableHead>
+              <TableRow>
+                <TableCell>Name</TableCell>
+                <TableCell>Slug</TableCell>
+                <TableCell>Address</TableCell>
+                <TableCell>Algorithm</TableCell>
+                <TableCell>Providers</TableCell>
+                <TableCell>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {locations.map((location) => (
+                <TableRow key={location.id} hover>
+                  <TableCell>
+                    <Typography fontWeight={600}>{location.name}</Typography>
+                  </TableCell>
+                  <TableCell>{location.slug}</TableCell>
+                  <TableCell>{location.address || '-'}</TableCell>
+                  <TableCell>
+                    <Chip size='small' label={String((location as any).assignment_algorithm || 'round_robin')} color='info' variant='outlined' />
+                  </TableCell>
+                  <TableCell>
+                    {location.service_providers.length > 0
+                      ? location.service_providers.map(p => p.name).join(', ')
+                      : 'No providers assigned'}
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      <Button size='small' variant='text' onClick={() => openEditModal(location)}>
                         Edit
-                      </button>
-                      <button
-                        onClick={() => openAssignModal(location)}
-                        className="text-green-600 hover:text-green-900"
-                      >
-                        Assign Providers
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </main>
-
-      {showModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <h3 className="text-lg font-bold mb-4">
-              {editingLocation ? 'Edit Location' : 'Add Location'}
-            </h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Slug</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
-                  placeholder="auto-generated if empty"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                <textarea
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
-                  rows={3}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Assignment Algorithm</label>
-                <select
-                  value={formData.assignment_algorithm}
-                  onChange={(e) => setFormData({ ...formData, assignment_algorithm: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
-                >
-                  <option value="round_robin">Round Robin</option>
-                  <option value="geographic">Geographic</option>
-                  <option value="load_balance">Load Balance</option>
-                  <option value="manual">Manual</option>
-                </select>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowModal(false);
-                    setEditingLocation(null);
-                  }}
-                  className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showAssignModal && assigningLocation && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <h3 className="text-lg font-bold mb-4">Assign Providers to {assigningLocation.name}</h3>
-            <div className="space-y-2 mb-4 max-h-64 overflow-y-auto">
-              {providers.map((provider) => (
-                <label key={provider.id} className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={selectedProviders.includes(provider.id)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedProviders([...selectedProviders, provider.id]);
-                      } else {
-                        setSelectedProviders(selectedProviders.filter(id => id !== provider.id));
-                      }
-                    }}
-                    className="mr-2"
-                  />
-                  <span>{provider.name}</span>
-                </label>
+                      </Button>
+                      <Button size='small' variant='outlined' onClick={() => openAssignModal(location)}>
+                        Assign providers
+                      </Button>
+                    </Box>
+                  </TableCell>
+                </TableRow>
               ))}
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={handleAssignProviders}
-                className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <Dialog
+        open={showModal}
+        onClose={() => {
+          setShowModal(false);
+          setEditingLocation(null);
+        }}
+        fullWidth
+        maxWidth='sm'
+      >
+        <DialogTitle>{editingLocation ? 'Edit location' : 'Add location'}</DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Box component='form' onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <TextField
+              label='Name'
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            />
+            <TextField
+              label='Slug'
+              required
+              value={formData.slug}
+              onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+              placeholder='auto-generated if empty'
+            />
+            <TextField
+              label='Address'
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              multiline
+              minRows={3}
+            />
+            <FormControl>
+              <InputLabel id='location-algorithm-label'>Assignment algorithm</InputLabel>
+              <Select
+                labelId='location-algorithm-label'
+                label='Assignment algorithm'
+                value={formData.assignment_algorithm}
+                onChange={(e) => setFormData({ ...formData, assignment_algorithm: String(e.target.value) })}
               >
-                Save
-              </button>
-              <button
-                onClick={() => {
-                  setShowAssignModal(false);
-                  setAssigningLocation(null);
-                }}
-                className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+                <MenuItem value='round_robin'>Round Robin</MenuItem>
+                <MenuItem value='geographic'>Geographic</MenuItem>
+                <MenuItem value='load_balance'>Load Balance</MenuItem>
+                <MenuItem value='manual'>Manual</MenuItem>
+              </Select>
+            </FormControl>
+
+            <DialogActions sx={{ px: 0 }}>
+              <Button onClick={() => { setShowModal(false); setEditingLocation(null); }}>Cancel</Button>
+              <Button type='submit' variant='contained'>Save</Button>
+            </DialogActions>
+          </Box>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={showAssignModal && !!assigningLocation}
+        onClose={() => {
+          setShowAssignModal(false);
+          setAssigningLocation(null);
+        }}
+        fullWidth
+        maxWidth='sm'
+      >
+        <DialogTitle>
+          {assigningLocation ? `Assign providers — ${assigningLocation.name}` : 'Assign providers'}
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, maxHeight: 320, overflow: 'auto' }}>
+            {providers.map((provider) => (
+              <Box key={provider.id} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <input
+                  type='checkbox'
+                  checked={selectedProviders.includes(provider.id)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedProviders([...selectedProviders, provider.id]);
+                    } else {
+                      setSelectedProviders(selectedProviders.filter((id) => id !== provider.id));
+                    }
+                  }}
+                />
+                <Typography>{provider.name}</Typography>
+              </Box>
+            ))}
+          </Box>
+          <DialogActions sx={{ px: 0, mt: 3 }}>
+            <Button onClick={() => { setShowAssignModal(false); setAssigningLocation(null); }}>Cancel</Button>
+            <Button variant='contained' onClick={handleAssignProviders}>Save</Button>
+          </DialogActions>
+        </DialogContent>
+      </Dialog>
+    </Box>
   );
 }
 

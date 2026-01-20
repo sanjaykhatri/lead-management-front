@@ -19,7 +19,26 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+
+      "@core/*": [
+        "./vendor/vuexy-starter/src/@core/*"
+      ],
+      "@layouts/*": [
+        "./vendor/vuexy-starter/src/@layouts/*"
+      ],
+      "@menu/*": [
+        "./vendor/vuexy-starter/src/@menu/*"
+      ],
+      "@components/*": [
+        "./vendor/vuexy-starter/src/components/*"
+      ],
+      "@configs/*": [
+        "./vendor/vuexy-starter/src/configs/*"
+      ],
+      "@assets/*": [
+        "./vendor/vuexy-starter/src/assets/*"
+      ]
     }
   },
   "include": [

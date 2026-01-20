@@ -2,8 +2,26 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import AdminNavigation from '@/components/AdminNavigation';
 import api from '@/lib/api';
+import FullPageLoader from '@/components/common/FullPageLoader';
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Stack,
+  TextField,
+  Typography
+} from '@mui/material';
 
 interface SubscriptionPlan {
   id: number;
@@ -150,232 +168,158 @@ export default function PlansPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <AdminNavigation />
-        <div className="p-8">Loading...</div>
-      </div>
-    );
+    return <FullPageLoader />;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminNavigation />
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Subscription Plans</h2>
-            <button
-              onClick={handleCreate}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
-            >
-              Create Plan
-            </button>
-          </div>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 2 }}>
+        <Box>
+          <Typography variant='h4'>Plans</Typography>
+          <Typography color='text.secondary'>Manage subscription plans available to providers.</Typography>
+        </Box>
+        <Button variant='contained' onClick={handleCreate}>Create plan</Button>
+      </Box>
 
-          <div className="bg-white shadow overflow-hidden sm:rounded-md">
-            <ul className="divide-y divide-gray-200">
-              {plans.map((plan) => (
-                <li key={plan.id} className="px-6 py-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-4">
-                        <h3 className="text-lg font-medium text-gray-900">{plan.name}</h3>
-                        {!plan.is_active && (
-                          <span className="px-2 py-1 text-xs font-medium bg-gray-200 text-gray-700 rounded">
-                            Inactive
-                          </span>
-                        )}
-                      </div>
-                      <p className="mt-1 text-sm text-gray-500">
-                        ${Number(plan.price).toFixed(2)} / {plan.interval}
-                        {plan.trial_days > 0 && ` • ${plan.trial_days} day trial`}
-                      </p>
-                      <p className="mt-1 text-sm text-gray-500">
-                        Stripe Price ID: {plan.stripe_price_id}
-                      </p>
-                      {plan.features && plan.features.length > 0 && (
-                        <ul className="mt-2 list-disc list-inside text-sm text-gray-600">
-                          {plan.features.map((feature, idx) => (
-                            <li key={idx}>{feature}</li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleEdit(plan)}
-                        className="text-indigo-600 hover:text-indigo-900 px-3 py-2 text-sm font-medium"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(plan.id)}
-                        className="text-red-600 hover:text-red-900 px-3 py-2 text-sm font-medium"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </main>
+      <Stack spacing={3}>
+        {plans.map((plan) => (
+          <Card key={plan.id}>
+            <CardContent>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 3, justifyContent: 'space-between' }}>
+                <Box sx={{ minWidth: 0 }}>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
+                    <Typography fontWeight={700}>{plan.name}</Typography>
+                    {!plan.is_active && <Chip size='small' label='Inactive' variant='outlined' />}
+                    <Chip size='small' label={plan.interval} color='info' variant='outlined' />
+                  </Box>
+                  <Typography color='text.secondary' sx={{ mt: 1 }}>
+                    ${Number(plan.price).toFixed(2)}
+                    {plan.trial_days > 0 && ` • ${plan.trial_days} day trial`}
+                  </Typography>
+                  <Typography variant='caption' color='text.secondary'>
+                    Stripe price: {plan.stripe_price_id}
+                  </Typography>
+                  {plan.features?.length > 0 && (
+                    <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {plan.features.map((f, idx) => (
+                        <Chip key={`${f}-${idx}`} size='small' label={f} variant='outlined' />
+                      ))}
+                    </Box>
+                  )}
+                </Box>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">
-              {editingPlan ? 'Edit Plan' : 'Create Plan'}
-            </h3>
-            <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Stripe Price ID
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.stripe_price_id}
-                  onChange={(e) => setFormData({ ...formData, stripe_price_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Price
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  required
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Interval
-                </label>
-                <select
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                  <Button size='small' variant='outlined' onClick={() => handleEdit(plan)}>
+                    Edit
+                  </Button>
+                  <Button size='small' variant='text' color='error' onClick={() => handleDelete(plan.id)}>
+                    Delete
+                  </Button>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        ))}
+      </Stack>
+
+      <Dialog open={showModal} onClose={() => setShowModal(false)} fullWidth maxWidth='sm'>
+        <DialogTitle>{editingPlan ? 'Edit plan' : 'Create plan'}</DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Box component='form' onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <TextField
+              label='Name'
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            />
+            <TextField
+              label='Stripe price ID'
+              required
+              value={formData.stripe_price_id}
+              onChange={(e) => setFormData({ ...formData, stripe_price_id: e.target.value })}
+            />
+
+            <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+              <TextField
+                label='Price'
+                type='number'
+                required
+                value={formData.price}
+                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                inputProps={{ step: '0.01' }}
+              />
+              <FormControl>
+                <InputLabel id='plan-interval-label'>Interval</InputLabel>
+                <Select
+                  labelId='plan-interval-label'
+                  label='Interval'
                   value={formData.interval}
                   onChange={(e) => setFormData({ ...formData, interval: e.target.value as 'monthly' | 'yearly' })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 >
-                  <option value="monthly">Monthly</option>
-                  <option value="yearly">Yearly</option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Trial Days
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={formData.trial_days}
-                  onChange={(e) => setFormData({ ...formData, trial_days: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  <MenuItem value='monthly'>Monthly</MenuItem>
+                  <MenuItem value='yearly'>Yearly</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+
+            <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+              <TextField
+                label='Trial days'
+                type='number'
+                value={formData.trial_days}
+                onChange={(e) => setFormData({ ...formData, trial_days: e.target.value })}
+                inputProps={{ min: 0 }}
+              />
+              <TextField
+                label='Sort order'
+                type='number'
+                value={formData.sort_order}
+                onChange={(e) => setFormData({ ...formData, sort_order: e.target.value })}
+              />
+            </Box>
+
+            <Box>
+              <Typography variant='subtitle2' sx={{ mb: 1 }}>
+                Features
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <TextField
+                  size='small'
+                  fullWidth
+                  value={featureInput}
+                  onChange={(e) => setFeatureInput(e.target.value)}
+                  placeholder='Add a feature'
                 />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Features
-                </label>
-                <div className="flex gap-2 mb-2">
-                  <input
-                    type="text"
-                    value={featureInput}
-                    onChange={(e) => setFeatureInput(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        addFeature();
-                      }
-                    }}
-                    placeholder="Add feature and press Enter"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
-                  />
-                  <button
-                    type="button"
-                    onClick={addFeature}
-                    className="px-3 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
-                  >
-                    Add
-                  </button>
-                </div>
-                <ul className="space-y-1">
-                  {formData.features.map((feature, index) => (
-                    <li key={index} className="flex items-center justify-between bg-gray-50 px-2 py-1 rounded">
-                      <span className="text-sm">{feature}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeFeature(index)}
-                        className="text-red-600 hover:text-red-800 text-sm"
-                      >
-                        Remove
-                      </button>
-                    </li>
+                <Button variant='outlined' onClick={addFeature}>
+                  Add
+                </Button>
+              </Box>
+              {formData.features.length > 0 && (
+                <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {formData.features.map((f, idx) => (
+                    <Chip key={`${f}-${idx}`} size='small' label={f} onDelete={() => removeFeature(idx)} />
                   ))}
-                </ul>
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Sort Order
-                </label>
-                <input
-                  type="number"
-                  value={formData.sort_order}
-                  onChange={(e) => setFormData({ ...formData, sort_order: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.is_active}
-                    onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                    className="mr-2"
-                  />
-                  <span className="text-sm font-medium text-gray-700">Active</span>
-                </label>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
-                >
-                  {editingPlan ? 'Update' : 'Create'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
+                </Box>
+              )}
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <input
+                type='checkbox'
+                checked={formData.is_active}
+                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+              />
+              <Typography>Active</Typography>
+            </Box>
+
+            <DialogActions sx={{ px: 0 }}>
+              <Button onClick={() => setShowModal(false)}>Cancel</Button>
+              <Button type='submit' variant='contained'>{editingPlan ? 'Update' : 'Create'}</Button>
+            </DialogActions>
+          </Box>
+        </DialogContent>
+      </Dialog>
+    </Box>
   );
 }
 

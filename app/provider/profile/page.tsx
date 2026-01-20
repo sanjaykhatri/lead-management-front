@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
-import ProviderNavigation from '@/components/ProviderNavigation';
+import FullPageLoader from '@/components/common/FullPageLoader';
+import { Box } from '@mui/material';
 
 interface Provider {
   id: number;
@@ -119,14 +120,11 @@ export default function ProviderProfilePage() {
   };
 
   if (loading) {
-    return <div className="p-8">Loading...</div>;
+    return <FullPageLoader />;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <ProviderNavigation />
-
-      <main className="max-w-4xl mx-auto py-12 sm:px-6 lg:px-8">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div className="px-4 py-6 sm:px-0">
           <div className="bg-white shadow rounded-lg">
             <div className="border-b border-gray-200">
@@ -258,8 +256,7 @@ export default function ProviderProfilePage() {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+    </Box>
   );
 }
 

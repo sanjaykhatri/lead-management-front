@@ -4,6 +4,21 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  Chip,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
+  Typography
+} from '@mui/material';
+import FullPageLoader from '@/components/common/FullPageLoader';
 
 interface Lead {
   id: number;
@@ -153,175 +168,144 @@ export default function LeadDetailPage() {
   };
 
   if (loading) {
-    return <div className="p-8">Loading...</div>;
+    return <FullPageLoader />;
   }
 
   if (!lead) {
-    return <div className="p-8">Lead not found</div>;
+    return (
+      <Box sx={{ py: 6 }}>
+        <Typography color='text.secondary'>Lead not found.</Typography>
+      </Box>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link href="/admin/dashboard" className="text-gray-500 hover:text-gray-700">
-                ← Back to Leads
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: 1000 }}>
+      <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 2 }}>
+        <Box>
+          <Typography variant='h4'>Lead details</Typography>
+          <Typography color='text.secondary'>
+            <Link href='/admin/dashboard'>Back to leads</Link> • #{lead.id}
+          </Typography>
+        </Box>
+        <Chip
+          size='small'
+          label={lead.status}
+          color={lead.status === 'new' ? 'warning' : lead.status === 'contacted' ? 'info' : 'success'}
+          variant='outlined'
+        />
+      </Box>
 
-      <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="bg-white shadow rounded-lg p-6 mb-6">
-            <h1 className="text-2xl font-bold mb-6">Lead Details</h1>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                <p className="text-gray-900">{lead.name}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <p className="text-gray-900">{lead.email}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                <p className="text-gray-900">{lead.phone}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Zip Code</label>
-                <p className="text-gray-900">{lead.zip_code}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Project Type</label>
-                <p className="text-gray-900">{lead.project_type}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Timing</label>
-                <p className="text-gray-900">{lead.timing}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                <p className="text-gray-900">{lead.location.name}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Assigned Provider</label>
-                <p className="text-gray-900">{lead.service_provider?.name || 'Unassigned'}</p>
-              </div>
-              {lead.notes && (
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                  <p className="text-gray-900">{lead.notes}</p>
-                </div>
-              )}
-            </div>
+      <Card>
+        <CardHeader title='Overview' />
+        <CardContent>
+          <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' } }}>
+            <Box><Typography variant='subtitle2'>Name</Typography><Typography>{lead.name}</Typography></Box>
+            <Box><Typography variant='subtitle2'>Email</Typography><Typography>{lead.email}</Typography></Box>
+            <Box><Typography variant='subtitle2'>Phone</Typography><Typography>{lead.phone}</Typography></Box>
+            <Box><Typography variant='subtitle2'>Zip code</Typography><Typography>{lead.zip_code}</Typography></Box>
+            <Box><Typography variant='subtitle2'>Project type</Typography><Typography>{lead.project_type}</Typography></Box>
+            <Box><Typography variant='subtitle2'>Timing</Typography><Typography>{lead.timing}</Typography></Box>
+            <Box><Typography variant='subtitle2'>Location</Typography><Typography>{lead.location.name}</Typography></Box>
+            <Box><Typography variant='subtitle2'>Assigned provider</Typography><Typography>{lead.service_provider?.name || 'Unassigned'}</Typography></Box>
+            {lead.notes && (
+              <Box sx={{ gridColumn: { md: '1 / -1' } }}>
+                <Typography variant='subtitle2'>Notes</Typography>
+                <Typography>{lead.notes}</Typography>
+              </Box>
+            )}
+          </Box>
 
-            <div className="border-t pt-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                <div className="flex gap-4">
-                  <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    className="border border-gray-300 rounded-md px-3 py-2"
-                  >
-                    <option value="new">New</option>
-                    <option value="contacted">Contacted</option>
-                    <option value="closed">Closed</option>
-                  </select>
-                  <button
-                    onClick={handleStatusUpdate}
-                    disabled={saving}
-                    className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 disabled:opacity-50"
-                  >
-                    {saving ? 'Saving...' : 'Update Status'}
-                  </button>
-                </div>
-              </div>
+          <Box sx={{ mt: 4, pt: 4, borderTop: '1px solid', borderColor: 'divider', display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' } }}>
+            <Box>
+              <FormControl fullWidth size='small'>
+                <InputLabel id='lead-status-update-label'>Status</InputLabel>
+                <Select
+                  labelId='lead-status-update-label'
+                  label='Status'
+                  value={status}
+                  onChange={(e) => setStatus(String(e.target.value))}
+                >
+                  <MenuItem value='new'>New</MenuItem>
+                  <MenuItem value='contacted'>Contacted</MenuItem>
+                  <MenuItem value='closed'>Closed</MenuItem>
+                </Select>
+              </FormControl>
+              <Button sx={{ mt: 2 }} variant='contained' onClick={handleStatusUpdate} disabled={saving}>
+                {saving ? 'Saving…' : 'Update status'}
+              </Button>
+            </Box>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Reassign Provider</label>
-                <div className="flex gap-4">
-                  <select
-                    value={selectedProvider}
-                    onChange={(e) => setSelectedProvider(e.target.value)}
-                    className="border border-gray-300 rounded-md px-3 py-2 flex-1"
-                  >
-                    <option value="">Select provider</option>
-                    {providers.map((provider) => (
-                      <option key={provider.id} value={provider.id}>
-                        {provider.name}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={handleReassign}
-                    disabled={saving || !selectedProvider}
-                    className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 disabled:opacity-50"
-                  >
-                    {saving ? 'Saving...' : 'Reassign'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+            <Box>
+              <FormControl fullWidth size='small'>
+                <InputLabel id='lead-provider-label'>Provider</InputLabel>
+                <Select
+                  labelId='lead-provider-label'
+                  label='Provider'
+                  value={selectedProvider}
+                  onChange={(e) => setSelectedProvider(String(e.target.value))}
+                >
+                  <MenuItem value=''>Select provider</MenuItem>
+                  {providers.map((provider) => (
+                    <MenuItem key={provider.id} value={provider.id}>
+                      {provider.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <Button sx={{ mt: 2 }} variant='contained' onClick={handleReassign} disabled={saving || !selectedProvider}>
+                {saving ? 'Saving…' : 'Reassign'}
+              </Button>
+            </Box>
+          </Box>
+        </CardContent>
+      </Card>
 
-          {/* Notes Section */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-xl font-bold mb-4">Notes & History</h2>
-            
-            <form onSubmit={handleAddNote} className="mb-6">
-              <textarea
-                value={newNote}
-                onChange={(e) => setNewNote(e.target.value)}
-                placeholder="Add a note..."
-                className="w-full border border-gray-300 rounded-md px-3 py-2 mb-2"
-                rows={3}
-              />
-              <button
-                type="submit"
-                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
-              >
-                Add Note
-              </button>
-            </form>
+      <Card>
+        <CardHeader title='Notes & history' />
+        <CardContent>
+          <Box component='form' onSubmit={handleAddNote} sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 4 }}>
+            <TextField
+              label='Add a note'
+              value={newNote}
+              onChange={(e) => setNewNote(e.target.value)}
+              multiline
+              minRows={3}
+            />
+            <Box>
+              <Button type='submit' variant='contained'>Add note</Button>
+            </Box>
+          </Box>
 
-            <div className="space-y-4">
-              {loadingNotes ? (
-                <p className="text-gray-500">Loading notes...</p>
-              ) : notes.length === 0 ? (
-                <p className="text-gray-500">No notes yet</p>
-              ) : (
-                notes.map((note) => (
-                  <div key={note.id} className="border-l-4 border-indigo-500 pl-4 py-2">
-                    <div className="flex justify-between items-start mb-1">
-                      <div>
-                        <p className="text-sm text-gray-600">
+          {loadingNotes ? (
+            <Typography color='text.secondary'>Loading notes…</Typography>
+          ) : notes.length === 0 ? (
+            <Typography color='text.secondary'>No notes yet.</Typography>
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {notes.map(note => (
+                <Card key={note.id} variant='outlined'>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                      <Box>
+                        <Typography fontWeight={700}>
                           {note.user?.name || note.service_provider?.name || 'System'}
-                        </p>
-                        <p className="text-xs text-gray-400">
+                        </Typography>
+                        <Typography variant='caption' color='text.secondary'>
                           {new Date(note.created_at).toLocaleString()}
-                        </p>
-                      </div>
-                      {note.type !== 'note' && (
-                        <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
-                          {note.type}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-gray-900">{note.note}</p>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      </main>
-    </div>
+                        </Typography>
+                      </Box>
+                      {note.type !== 'note' && <Chip size='small' label={note.type} color='info' variant='outlined' />}
+                    </Box>
+                    <Typography sx={{ mt: 2 }}>{note.note}</Typography>
+                  </CardContent>
+                </Card>
+              ))}
+            </Box>
+          )}
+        </CardContent>
+      </Card>
+    </Box>
   );
 }
 

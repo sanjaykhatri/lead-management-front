@@ -5,7 +5,8 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
-import ProviderNavigation from '@/components/ProviderNavigation';
+import FullPageLoader from '@/components/common/FullPageLoader';
+import { Box } from '@mui/material';
 
 interface Lead {
   id: number;
@@ -144,7 +145,7 @@ export default function ProviderLeadDetailPage() {
   };
 
   if (loading) {
-    return <div className="p-8">Loading...</div>;
+    return <FullPageLoader />;
   }
 
   if (!lead) {
@@ -152,9 +153,7 @@ export default function ProviderLeadDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <ProviderNavigation />
-      <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div className="px-4 py-6 sm:px-0">
           <div className="bg-white shadow rounded-lg p-6 mb-6">
             <h1 className="text-2xl font-bold mb-6">Lead Details</h1>
@@ -272,8 +271,7 @@ export default function ProviderLeadDetailPage() {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+    </Box>
   );
 }
 
