@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import Link from 'next/link';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import FullPageLoader from '@/components/common/FullPageLoader';

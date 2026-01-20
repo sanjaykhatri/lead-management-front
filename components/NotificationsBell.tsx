@@ -18,20 +18,6 @@ export default function NotificationsBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [adminId, setAdminId] = useState<number | null>(null);
-
-  // Fetch admin ID
-  useEffect(() => {
-    const fetchAdminId = async () => {
-      try {
-        const response = await api.get('/admin/user');
-        setAdminId(response.data.user?.id || null);
-      } catch (error) {
-        console.error('Failed to fetch admin ID:', error);
-      }
-    };
-    fetchAdminId();
-  }, []);
 
   // Handle real-time notifications - Lead Assigned
   const handleLeadAssigned = useCallback((data: any) => {

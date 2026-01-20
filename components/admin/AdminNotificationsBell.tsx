@@ -1,11 +1,10 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import api from '@/lib/api'
 import { usePusherNotifications } from '@/hooks/usePusher'
-import { IconButton, Badge, Popper, Paper, ClickAwayListener, MenuList, Typography, Divider, Button, Box, CircularProgress } from '@mui/material'
+import { IconButton, Badge, Popper, Paper, MenuList, Typography, Button, Box, CircularProgress } from '@mui/material'
 import { styled } from '@mui/material/styles'
 
 interface Notification {
@@ -23,7 +22,6 @@ const StyledPopper = styled(Popper)(({ theme }) => ({
 }))
 
 export default function AdminNotificationsBell() {
-  const router = useRouter()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [open, setOpen] = useState(false)
@@ -153,11 +151,6 @@ export default function AdminNotificationsBell() {
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget)
     setOpen(!open)
-  }
-
-  const handleClose = () => {
-    setOpen(false)
-    setAnchorEl(null)
   }
 
   return (

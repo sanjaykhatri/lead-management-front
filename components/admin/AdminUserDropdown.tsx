@@ -87,7 +87,7 @@ const AdminUserDropdown = () => {
   }, [router])
 
   const handleDropdownOpen = () => {
-    !open ? setOpen(true) : setOpen(false)
+    setOpen(!open)
   }
 
   const handleDropdownClose = (event?: MouseEvent<HTMLLIElement> | (MouseEvent | TouchEvent), url?: string) => {

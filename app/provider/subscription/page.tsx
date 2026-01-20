@@ -49,7 +49,6 @@ function SubscriptionContent() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
-  const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [loadError, setLoadError] = useState<string>('');
 
   useEffect(() => {
@@ -88,9 +87,6 @@ function SubscriptionContent() {
       ]);
       setSubscription(statusResponse.data.subscription);
       setPlans(plansResponse.data);
-      if (statusResponse.data.current_plan) {
-        setSelectedPlanId(statusResponse.data.current_plan.id);
-      }
     } catch (error: any) {
       if (error.response?.status === 401) {
         localStorage.removeItem('token');

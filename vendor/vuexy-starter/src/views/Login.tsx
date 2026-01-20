@@ -92,7 +92,7 @@ const LoginV2 = ({ mode }: { mode: SystemMode }) => {
     <div className='flex bs-full justify-center'>
       <div
         className={classnames(
-          'flex bs-full items-center justify-center flex-1 min-bs-[100dvh] relative p-6 max-md:hidden',
+          'flex bs-full items-center justify-center flex-1 min-bs-dvh relative p-6 max-md:hidden',
           {
             'border-ie': settings.skin === 'bordered'
           }
@@ -107,8 +107,8 @@ const LoginV2 = ({ mode }: { mode: SystemMode }) => {
           />
         )}
       </div>
-      <div className='flex justify-center items-center bs-full bg-backgroundPaper !min-is-full p-6 md:!min-is-[unset] md:p-12 md:is-[480px]'>
-        <Link className='absolute block-start-5 sm:block-start-[33px] inline-start-6 sm:inline-start-[38px]'>
+      <div className='flex justify-center items-center bs-full bg-backgroundPaper min-is-full! p-6 md:min-is-[unset]! md:p-12 md:is-[480px]'>
+        <Link className='absolute block-start-5 sm:block-start-[33px] inline-start-6 sm:start-[38px]'>
           <Logo />
         </Link>
         <div className='flex flex-col gap-6 is-full sm:is-auto md:is-full sm:max-is-[400px] md:max-is-[unset] mbs-11 sm:mbs-14 md:mbs-0'>

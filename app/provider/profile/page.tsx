@@ -2,23 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import FullPageLoader from '@/components/common/FullPageLoader';
 import { Box } from '@mui/material';
 
-interface Provider {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-}
-
 export default function ProviderProfilePage() {
   const router = useRouter();
-  const [provider, setProvider] = useState<Provider | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'profile' | 'password'>('profile');
@@ -54,7 +44,6 @@ export default function ProviderProfilePage() {
   const fetchProfile = async () => {
     try {
       const response = await api.get('/provider/user');
-      setProvider(response.data);
       setProfileData({
         name: response.data.name || '',
         email: response.data.email || '',

@@ -57,7 +57,7 @@ function KanbanCard({ lead, onView }: { lead: Lead; onView: () => void }) {
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = (_e: React.MouseEvent) => {
     // Don't navigate if dragging
     if (!isDragging) {
       onView();
@@ -219,15 +219,6 @@ export default function ProviderDashboard() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await api.post('/provider/logout');
-    } catch (error) {
-      // Ignore logout errors
-    }
-    localStorage.removeItem('token');
-    router.push('/provider/login');
-  };
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -266,7 +257,7 @@ export default function ProviderDashboard() {
     // Update on server
     try {
       await api.put(`/provider/leads/${leadId}`, { status: newStatus });
-    } catch (error: any) {
+    } catch {
       // Revert on error
       setLeads(leads);
       alert('Failed to update lead status. Please try again.');

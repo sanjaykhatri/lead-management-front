@@ -95,39 +95,8 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    router.push('/admin/login');
-  };
-
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
-  };
-
-  const handleExportCsv = async () => {
-    try {
-      const params = new URLSearchParams();
-      if (filters.location_id) params.append('location_id', filters.location_id);
-      if (filters.status) params.append('status', filters.status);
-      if (filters.date_from) params.append('date_from', filters.date_from);
-      if (filters.date_to) params.append('date_to', filters.date_to);
-
-      const response = await api.get(`/admin/leads/export/csv?${params.toString()}`, {
-        responseType: 'blob',
-      });
-
-      // Create blob and download
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `leads_export_${new Date().toISOString().split('T')[0]}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (error: any) {
-      console.error('Failed to export CSV:', error);
-      alert('Failed to export CSV. Please try again.');
-    }
   };
 
   useEffect(() => {

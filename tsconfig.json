@@ -19,6 +19,9 @@
       }
     ],
     "paths": {
+      "@/types/*": [
+        "./vendor/vuexy-starter/src/types/*"
+      ],
       "@/*": ["./*"],
 
       "@core/*": [
@@ -38,6 +41,9 @@
       ],
       "@assets/*": [
         "./vendor/vuexy-starter/src/assets/*"
+      ],
+      "@views/*": [
+        "./vendor/vuexy-starter/src/views/*"
       ]
     }
   },
