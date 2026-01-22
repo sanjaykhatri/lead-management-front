@@ -5,9 +5,6 @@
 		},
 		{
 			"path": "../lead-management-backend"
-		},
-		{
-			"path": "../../Downloads/vuexy-admin-v10.11.1/nextjs-version/typescript-version"
 		}
 	]
 }
